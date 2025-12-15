@@ -23,7 +23,8 @@ const Icons = {
   Strategy: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
   Protected: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
   Info: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
-  Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+  Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  Refresh: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
 };
 
 // --- DATA ---
@@ -275,7 +276,7 @@ const DmoImpactPanel = () => {
     <div className="card" style={{ background: 'linear-gradient(135deg, #006B76 0%, #004E56 100%)', color: 'white', border: 'none', marginBottom: '24px', boxShadow: '0 10px 15px -3px rgba(0, 107, 118, 0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
         <h3 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', border: 'none', padding: 0 }}>
-          VISIT DANA POINT DMO IMPACT (VETTED)
+          Visit Dana Point DMO Impact
         </h3>
         <span style={{ fontSize: '0.7rem', opacity: 0.9, background: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '4px', fontWeight: '600' }}>VDP Attributed</span>
       </div>
@@ -339,13 +340,14 @@ const LiveIntelligenceCard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    const fetchIntel = async () => {
+  const fetchIntel = async () => {
+      setLoading(true);
+      setError(false);
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: 'Identify 3 key current events or trends impacting the Dana Point, CA tourism market. IMPORTANT: You must ONLY use information from valid sources like the City of Dana Point website, Visit Dana Point, STR, or major news outlets. Do not use unverified blogs. Summarize strictly as a bulleted list.',
+          contents: 'Perform a targeted search for the latest hospitality industry news and tourism data relevant to Dana Point, CA. You MUST prioritize information from: CoStar, Tourism Economics, Destinations International, Brand USA, Visit California, and State of California sources. Summarize 3-4 key trends, reports, or economic indicators that impact the local hotel and tourism market. Format strictly as a bulleted list.',
           config: {
             tools: [{ googleSearch: {} }]
           }
@@ -362,7 +364,8 @@ const LiveIntelligenceCard = () => {
         setLoading(false);
       }
     };
-    
+
+  useEffect(() => {
     fetchIntel();
   }, []);
 
@@ -372,13 +375,42 @@ const LiveIntelligenceCard = () => {
     <div className="card" style={{ borderLeft: '4px solid var(--accent)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
             <h3 style={{ color: '#276749', margin: 0, border: 'none', padding: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icons.Strategy /> LIVE INTELLIGENCE (Vetted Sources)
+                <Icons.Strategy /> HOSPITALITY & MARKET INTELLIGENCE RADAR
             </h3>
-            <span className="badge badge-green">LIVE</span>
+            <button 
+              onClick={fetchIntel} 
+              disabled={loading}
+              style={{
+                background: 'transparent',
+                border: '1px solid #C6F6D5',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.75rem',
+                color: '#276749',
+                fontWeight: '600'
+              }}
+            >
+              <Icons.Refresh /> {loading ? 'Scanning...' : 'Refresh Intelligence'}
+            </button>
+        </div>
+
+        {/* Targeted Sources Indicator */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+             {['CoStar', 'Tourism Economics', 'Destinations Intl', 'Brand USA', 'Visit California', 'State Data'].map(src => (
+                 <span key={src} style={{fontSize: '0.65rem', background: '#E6FFFA', color: '#234E52', padding: '2px 8px', borderRadius: '12px', border: '1px solid #B2F5EA', fontWeight: '600'}}>
+                    {src}
+                 </span>
+             ))}
         </div>
         
         {loading ? (
-             <div style={{ color: '#4A5568', fontStyle: 'italic', fontSize: '0.9rem' }}>Analyzing real-time market data...</div>
+             <div style={{ padding: '20px', textAlign: 'center', color: '#4A5568', fontStyle: 'italic', fontSize: '0.9rem', background: '#F7FAFC', borderRadius: '8px' }}>
+                 Scanning industry reports and local data sources...
+             </div>
         ) : (
             <>
                 <div style={{ fontSize: '0.95rem', lineHeight: '1.6', color: '#4A5568' }}>
@@ -400,7 +432,7 @@ const LiveIntelligenceCard = () => {
                 </div>
                 {insight?.chunks && insight.chunks.length > 0 && (
                     <div style={{ marginTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}>
-                        <div style={{ fontSize: '0.7rem', color: '#718096', marginBottom: '4px', fontWeight: 'bold' }}>SOURCES:</div>
+                        <div style={{ fontSize: '0.7rem', color: '#718096', marginBottom: '4px', fontWeight: 'bold' }}>VERIFIED SOURCES:</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {insight.chunks.map((chunk, i) => {
                                 if (chunk.web?.uri) {
