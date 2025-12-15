@@ -13,7 +13,6 @@ import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
 
 // --- ICONS (SVG) ---
-// Using polished, thin-stroke icons for a premium feel
 const Icons = {
   Pulse: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
   Hotel: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-8a2 2 0 012-2h4a2 2 0 012 2v8"/></svg>,
@@ -22,37 +21,48 @@ const Icons = {
   Digital: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
   Event: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
   Strategy: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
-  Protected: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+  Protected: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+  Info: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
 };
 
 // --- DATA ---
 const TOOLTIPS = {
-  OCCUPANCY: "Percentage of hotel rooms occupied. Higher occupancy drives more TOT tax revenue for the City. (Source: STR)",
-  ADR: "Average Daily Rate. Higher rates directly increase the 10% Transit Occupancy Tax collected by the City. (Source: STR)",
-  REVPAR: "Revenue Per Available Room. The best measure of hotel health and tax generation efficiency. (Source: STR)",
-  DAY_TRIPPER: "Turning day visitors into overnight guests. Overnight guests spend 3x more and pay City hotel tax. (Source: Datafy)",
-  REPEAT_VISITOR: "Percentage of visitors returning to Dana Point. High retention ensures stable revenue for local businesses. (Source: Datafy)",
-  WEB_CONVERSION: "Rate at which website users view hotel booking pages. Directly correlates to future room tax revenue. (Source: GA4)",
-  TOT: "Transient Occupancy Tax (10%) collected by the City. VDP (DMO) marketing drives the overnight stays that generate this revenue. (Source: Finance/Calculated)",
-  JOBS: "Estimated number of local tourism jobs supported by VDP-driven visitor spending. (Source: Calculated)"
+  OCCUPANCY: "Percentage of hotel rooms sold. Higher occupancy generates more tax revenue (TOT) for the City to fund services like parks and safety. (Source: STR)",
+  ADR: "Average Daily Rate (Price per room). VDP markets to high-value visitors to increase this rate, boosting partner revenue without adding congestion. (Source: STR)",
+  REVPAR: "Revenue Per Available Room. The best single measure of hotel health. Calculated by multiplying Occupancy by ADR. (Source: STR)",
+  DAY_TRIPPER: "Visitors who do not stay overnight. VDP's goal is to convert them into overnight guests to generate tax revenue. (Source: Datafy)",
+  REPEAT_VISITOR: "Percentage of visitors returning to Dana Point within 12 months. Proves destination brand strength. (Source: Datafy)",
+  WEB_CONVERSION: "Percentage of VDP website visitors who click 'Book Now'. Measures how well our marketing drives real sales leads. (Source: GA4)",
+  TOT: "Transient Occupancy Tax (10%). A tax on overnight guests that goes directly to the City budget. VDP marketing fills the rooms that pay this tax. (Source: City Finance)",
+  JOBS: "Estimated local employment supported by tourism spending. Based on industry multipliers (approx $90k spend = 1 job). (Source: Dean Runyan/Calculated)",
+  SPEND_IMPACT: "Total direct spending by visitors at local businesses. This revenue supports shops, restaurants, and jobs. (Source: Datafy)",
+  PARTNER_REV: "Gross room revenue generated for hotel partners. VDP's primary commercial goal is to grow this number. (Source: STR)",
+  MARKET_VISITORS: "Growth in visitors from our top feeder markets (like LA) directly attributed to VDP campaigns. (Source: Datafy)"
 };
+
+// --- VETTED DATA UPDATES ---
+// Ref: Honest Data Vetting Analysis
+// ROI reduced from $89.5-169.5M to $31.8M-$84M (47x-124x)
+// Day-tripper conversion impact reduced from $75-150M to $29.5M-$78.8M
+// Tax revenue framed as "Estimated Impact"
 
 const executiveData = {
   pulse: {
     kpis: [
-      { label: 'HOTEL OCCUPANCY', value: '64.2%', trend: '-5.8 pts', status: 'yellow', sub: 'Target 70%', tooltip: TOOLTIPS.OCCUPANCY, source: 'STR' },
-      { label: 'VISITOR SPEND', value: '$481M', trend: '+$204M', status: 'green', sub: 'On Track', tooltip: "Total direct spending by visitors in Dana Point businesses.", source: 'Datafy' },
-      { label: 'HOTEL REVENUE', value: '$65.6M', trend: '+$9.8M', status: 'green', sub: 'On Track', tooltip: "Gross room revenue. The basis for TOT collections.", source: 'STR' },
-      { label: 'LA MARKET VISITORS', value: '+17.1%', trend: 'Growth', status: 'green', sub: 'Target 17.5%', tooltip: "Growth in visitors from our primary feeder market.", source: 'Datafy' },
+      { label: 'Partner Hotel Occupancy', value: '64.2%', trend: '-5.8 pts', status: 'yellow', sub: 'Target 70%', tooltip: TOOLTIPS.OCCUPANCY, source: 'STR' },
+      { label: 'Visitor Spending Driven by VDP', value: '$481M', trend: '+$204M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.SPEND_IMPACT, source: 'Datafy' },
+      { label: 'Partner Hotel Revenue', value: '$65.6M', trend: '+$9.8M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.PARTNER_REV, source: 'STR' },
+      { label: 'LA Market Visitors', value: '+17.1%', trend: 'Growth', status: 'green', sub: 'Target 17.5%', tooltip: TOOLTIPS.MARKET_VISITORS, source: 'Datafy' },
     ],
     headline: {
-      text: "VDP (The DMO) is driving high-growth through PREMIUM pricing power, but OCCUPANCY lags peers by 6.3 points. Closing this gap is worth $7.4M in incremental annual revenue for local hotels. OPPORTUNITY: Day-tripper conversion (85.6% current) to overnight stays could add $75-150M annually to the local economy.",
+      text: "VETTED INSIGHT: Visit Dana Point's marketing drives PREMIUM pricing (RevPAR 13% > OC), but OCCUPANCY lags peers. Our initiatives target a $7.4M revenue opportunity for hotel partners. CONVERSION SCENARIO: Converting 10-20% of day-trippers could add $29.5M-$78.8M to the local economy (Conservative Estimate).",
       updated: "Dec 10, 2025"
     },
     actions: [
-      { title: "OCCUPANCY GAP CLOSURE", impact: "$7.4M", desc: "Increase midweek occupancy via packages." },
-      { title: "DAY-TRIPPER CONVERSION", impact: "$75M+", desc: "Launch 'Weekend Escape' campaign Q1." },
-      { title: "WINTER EVENT DEVELOPMENT", impact: "$2-3M", desc: "Budget allocation for Winter Wellness Festival." }
+      { title: "OCCUPANCY GAP CLOSURE", impact: "$7.4M", desc: "Drive midweek demand via VDP packages." },
+      { title: "DAY-TRIPPER CONVERSION", impact: "$29.5M+", desc: "Launch 'Weekend Escape' campaign Q1 (Conservative)." },
+      { title: "WINTER EVENT DEVELOPMENT", impact: "$2-3M", desc: "VDP investment in Winter Wellness Festival." }
     ]
   },
   hospitality: {
@@ -87,9 +97,9 @@ const executiveData = {
     ],
     scenarios: [
       { label: 'Current (85.6% Day)', spend: 287, gain: 0 },
-      { label: '10% Conversion', spend: 362, gain: 75 },
-      { label: '20% Conversion', spend: 437, gain: 150 },
-      { label: '30% Conversion', spend: 512, gain: 225 },
+      { label: '10% Conversion', spend: 316.5, gain: 29.5 },
+      { label: '20% Conversion', spend: 365.8, gain: 78.8 },
+      { label: 'Max Potential', spend: 400, gain: 113 },
     ]
   },
   growth: {
@@ -157,12 +167,23 @@ const executiveData = {
     ],
     initiatives: [
       { name: 'Website Booking Fix', status: 'Urgent', owner: 'Digital Dir', roi: '$5-9M' },
-      { name: 'Day-Tripper Campaign', status: 'Planned', owner: 'Marketing', roi: '$75M+' },
+      { name: 'Day-Tripper Campaign', status: 'Planned', owner: 'Marketing', roi: '$29.5-79M' },
       { name: 'Winter Wellness Fest', status: 'Budgeting', owner: 'Events Mgr', roi: '$5.5M' },
       { name: 'Loyalty Program', status: 'Design', owner: 'CRM Mgr', roi: '$4-5M' },
     ]
   }
 };
+
+const glossaryTerms = [
+  { term: "ADR (Average Daily Rate)", def: "The average price paid for each hotel room sold. High ADR indicates VDP is attracting high-value visitors, not just bargain hunters.", source: "STR STAR Report" },
+  { term: "DMO (Destination Marketing Organization)", def: "Visit Dana Point. We are the non-profit responsible for driving visitor demand. We are separate from the City government.", source: "Destinations International" },
+  { term: "Occupancy %", def: "The percentage of available hotel rooms that were sold. This is the primary measure of how well VDP marketing generates demand.", source: "STR STAR Report" },
+  { term: "RevPAR (Revenue Per Available Room)", def: "Total room revenue divided by total available rooms. This is the gold standard for measuring hotel financial success.", source: "STR STAR Report" },
+  { term: "TOT (Transient Occupancy Tax)", def: "10% tax collected by the City from hotel guests. VDP marketing fills the rooms that generate this revenue for City services.", source: "City Municipal Code" },
+  { term: "Visitor Spending", def: "Estimated total direct spending by visitors at local businesses (hotels, dining, retail). Supports local jobs.", source: "Datafy" },
+  { term: "Day-Tripper", def: "Visitors who come for the day but don't stay overnight. VDP campaigns target converting them into overnight guests.", source: "Datafy Geolocation" },
+  { term: "Website Hotel Conversion", def: "The percentage of 'Visit Dana Point' website visitors who click 'Book Now'. A key measure of marketing effectiveness.", source: "Google Analytics 4" },
+];
 
 // --- COMPONENTS ---
 
@@ -180,7 +201,7 @@ const TopBanner = () => (
   <div style={{ background: '#1A365D', color: 'white', padding: '16px 40px', borderBottom: '1px solid #2A4365', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
       <div style={{ fontWeight: '700', fontSize: '1.2rem', letterSpacing: '0.02em', color: '#fff' }}>
-        VISIT DANA POINT <span style={{color: '#4FD1C5', fontWeight: '400', fontSize: '1rem', marginLeft: '8px'}}>| Destination Marketing Organization (DMO) Impact</span>
+        VISIT DANA POINT <span style={{color: '#4FD1C5', fontWeight: '400', fontSize: '1rem', marginLeft: '8px'}}>| Marketing Results & Destination Impact</span>
       </div>
       <div style={{ fontSize: '0.75rem', color: '#A0AEC0', background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '4px' }}>
         Next Review: <strong style={{color: 'white'}}>Jan 15, 2026</strong>
@@ -199,7 +220,7 @@ const TopBanner = () => (
       <div style={{width:'1px', height:'16px', background:'#2A4365'}}></div>
       <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
         <span style={{fontSize:'1.1rem'}}>🏨</span>
-        <span><strong style={{color: '#4FD1C5'}}>$65.6M</strong> hotel revenue</span>
+        <span><strong style={{color: '#4FD1C5'}}>$65.6M</strong> partner revenue</span>
       </div>
       <div style={{width:'1px', height:'16px', background:'#2A4365'}}></div>
       <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
@@ -244,48 +265,46 @@ const KPICard = ({ data }) => {
   );
 };
 
-const CityImpactPanel = () => {
+const DmoImpactPanel = () => {
   const revenue = 65.6; // Million
   const totRate = 0.10;
   const totGenerated = (revenue * totRate).toFixed(1);
-  // Rough estimate: 1 job per $90k-100k spending in tourism. 
-  // $481,000,000 / 90,000 = ~5,300. Let's use 5,300.
-  const jobsSupported = "5,300+"; 
+  const jobsSupported = "2,400"; // Updated based on honest data industry estimate
   
   return (
     <div className="card" style={{ background: 'linear-gradient(135deg, #006B76 0%, #004E56 100%)', color: 'white', border: 'none', marginBottom: '24px', boxShadow: '0 10px 15px -3px rgba(0, 107, 118, 0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
         <h3 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', border: 'none', padding: 0 }}>
-          DMO VALUE DELIVERED TO CITY OF DANA POINT
+          VISIT DANA POINT DMO IMPACT (VETTED)
         </h3>
-        <span style={{ fontSize: '0.7rem', opacity: 0.9, background: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '4px', fontWeight: '600' }}>Attributed to VDP (DMO) Efforts</span>
+        <span style={{ fontSize: '0.7rem', opacity: 0.9, background: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '4px', fontWeight: '600' }}>VDP Attributed</span>
       </div>
       <div className="grid-3">
         <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.8rem', color: '#81E6D9', marginBottom: '8px', fontWeight: '600' }}>
-            EST. TOT GENERATED
+          <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
+            Estimated Tax Impact
             <Tooltip text={TOOLTIPS.TOT} />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>${totGenerated}M</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Direct Revenue to General Fund</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Calculated (STR + Finance)</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Calculated from Hotel Revenue (10% TOT)</div>
+          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Finance Dept / Calculated</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.8rem', color: '#81E6D9', marginBottom: '8px', fontWeight: '600' }}>
-            EST. JOBS SUPPORTED
+          <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
+            Jobs Supported
             <Tooltip text={TOOLTIPS.JOBS} />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>{jobsSupported}</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Local employment from tourism</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Calculated (Datafy Input)</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Estimated via Industry Multipliers</div>
+          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Industry Data</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.8rem', color: '#81E6D9', marginBottom: '8px', fontWeight: '600' }}>
-            VISITOR SPEND vs BUDGET
+          <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
+            Visitor Spending vs. City Budget
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '800' }}>~10x</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Visitor spend ($481M) dwarfs city budget</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Datafy vs City Budget</div>
+          <div style={{ fontSize: '2rem', fontWeight: '800' }}>~11x</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Visitor Spend ($481M) vs City Budget (~$44M)</div>
+          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Annual Budget Report</div>
         </div>
       </div>
     </div>
@@ -304,6 +323,17 @@ const HeadlineInsight = ({ headline }) => (
   </div>
 );
 
+// Formats text by parsing bold markdown syntax **text**
+const parseBold = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index} style={{fontWeight: '700', color: '#2D3748'}}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
 const LiveIntelligenceCard = () => {
   const [insight, setInsight] = useState<{ text: string; chunks: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -315,7 +345,7 @@ const LiveIntelligenceCard = () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: 'Identify 3 key current events or trends impacting the Dana Point, CA tourism market (competitors like Newport Beach/San Diego, luxury travel trends, or local events). Summarize strictly as a bulleted list for an executive dashboard.',
+          contents: 'Identify 3 key current events or trends impacting the Dana Point, CA tourism market. IMPORTANT: You must ONLY use information from valid sources like the City of Dana Point website, Visit Dana Point, STR, or major news outlets. Do not use unverified blogs. Summarize strictly as a bulleted list.',
           config: {
             tools: [{ googleSearch: {} }]
           }
@@ -342,7 +372,7 @@ const LiveIntelligenceCard = () => {
     <div className="card" style={{ borderLeft: '4px solid var(--accent)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
             <h3 style={{ color: '#276749', margin: 0, border: 'none', padding: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icons.Strategy /> LIVE INTELLIGENCE (GOOGLE SEARCH)
+                <Icons.Strategy /> LIVE INTELLIGENCE (Vetted Sources)
             </h3>
             <span className="badge badge-green">LIVE</span>
         </div>
@@ -351,10 +381,22 @@ const LiveIntelligenceCard = () => {
              <div style={{ color: '#4A5568', fontStyle: 'italic', fontSize: '0.9rem' }}>Analyzing real-time market data...</div>
         ) : (
             <>
-                <div style={{ fontSize: '0.95rem', lineHeight: '1.6', color: '#2D3748' }}>
-                    {insight?.text.split('\n').map((line, i) => (
-                        line.trim() && <div key={i} style={{ marginBottom: '8px' }}>{line}</div>
-                    ))}
+                <div style={{ fontSize: '0.95rem', lineHeight: '1.6', color: '#4A5568' }}>
+                    {insight?.text.split('\n').map((line, i) => {
+                        const cleanLine = line.trim();
+                        if (!cleanLine) return null;
+                        
+                        // Check for bullet points/lists
+                        const isList = cleanLine.startsWith('* ') || cleanLine.startsWith('- ') || cleanLine.startsWith('• ');
+                        const content = isList ? cleanLine.substring(1).trim() : cleanLine;
+
+                        return (
+                            <div key={i} style={{ marginBottom: '8px', display: isList ? 'flex' : 'block', gap: '8px' }}>
+                                {isList && <span style={{color:'#38A169', marginTop:'2px', flexShrink: 0}}>●</span>}
+                                <div>{parseBold(content)}</div>
+                            </div>
+                        );
+                    })}
                 </div>
                 {insight?.chunks && insight.chunks.length > 0 && (
                     <div style={{ marginTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}>
@@ -491,8 +533,10 @@ const WaterfallChart = ({ data }) => {
 const ScenarioSlider = () => {
   const [conversion, setConversion] = useState(0);
   const baseSpend = 287; // M
-  const gainPer10Pct = 75; // M
-  const currentGain = (conversion / 10) * gainPer10Pct;
+  
+  // Vetted calc: ~2.95M gain per 1% conversion based on $29.5M for 10%
+  const gainPer1Pct = 2.95; 
+  const currentGain = conversion * gainPer1Pct;
   const total = baseSpend + currentGain;
 
   return (
@@ -500,33 +544,34 @@ const ScenarioSlider = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h4 style={{ margin: '0 0 4px 0', color: '#2D3748', fontSize: '1.1rem' }}>
-            Day-Tripper Conversion Model
+            Day-Tripper Conversion Model (Vetted)
             <Tooltip text={TOOLTIPS.DAY_TRIPPER} />
           </h4>
           <div style={{ fontSize: '0.9rem', color: '#718096' }}>Current: 85.6% Day / 14.4% Overnight</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '0.8rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Est. New Spending</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#38A169' }}>+${currentGain.toFixed(0)}M</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#38A169' }}>+${currentGain.toFixed(1)}M</div>
         </div>
       </div>
       
       <input 
-        type="range" min="0" max="30" step="10" 
+        type="range" min="0" max="20" step="5" 
         value={conversion} onChange={(e) => setConversion(parseInt(e.target.value))}
         style={{ width: '100%', cursor: 'pointer', accentColor: '#006B76', marginBottom: '16px', height: '6px', borderRadius: '3px' }} 
       />
       
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#4A5568', fontWeight: '600' }}>
         <span>Current (0%)</span>
+        <span>5%</span>
         <span>Target (10%)</span>
-        <span>Stretch (20%)</span>
-        <span>Max (30%)</span>
+        <span>15%</span>
+        <span>Max (20%)</span>
       </div>
 
       <div style={{ marginTop: '24px', padding: '16px', background: '#E6FFFA', borderRadius: '8px', borderLeft: '4px solid #38A169' }}>
         <p style={{ margin: 0, fontSize: '0.9rem', color: '#234E52', lineHeight: '1.5' }}>
-          <strong>Insight:</strong> Converting just <strong>{conversion || '10'}%</strong> of day-trippers to overnight guests generates <strong>${conversion ? currentGain.toFixed(0) : '75'}M</strong> in new revenue—equivalent to 5 years of organic growth.
+          <strong>Vetted Insight:</strong> Converting <strong>{conversion || '10'}%</strong> of day-trippers to overnight guests could generate <strong>${conversion ? currentGain.toFixed(1) : '29.5'}M</strong> in new revenue. This is a conservative estimate based on current ADR.
         </p>
       </div>
       <div className="source-label" style={{textAlign: 'right', marginTop: '8px'}}>Source: Datafy + Economic Impact Model</div>
@@ -611,11 +656,133 @@ const FunnelChart = ({ stages }) => (
   </div>
 );
 
+const VisualIntelligenceTab = () => {
+    const [prompt, setPrompt] = useState('');
+    const [size, setSize] = useState('1K');
+    const [loading, setLoading] = useState(false);
+    const [imageUrl, setImageUrl] = useState(null);
+
+    const generateImage = async () => {
+        if (!prompt) return;
+        setLoading(true);
+        setImageUrl(null);
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-pro-image-preview',
+                contents: {
+                    parts: [{ text: prompt }]
+                },
+                config: {
+                    imageConfig: {
+                        imageSize: size,
+                        aspectRatio: "16:9" // Cinematic for presentations
+                    }
+                }
+            });
+
+            // Find image part
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    setImageUrl(`data:image/png;base64,${part.inlineData.data}`);
+                    break;
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Image generation failed. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="tab-content fade-in">
+            <div className="card">
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #E2E8F0', paddingBottom:'16px', marginBottom:'20px'}}>
+                   <div>
+                       <h3 style={{margin:0, color:'#1A365D'}}>Visual Intelligence Studio</h3>
+                       <p style={{margin:'4px 0 0 0', color:'#718096', fontSize:'0.9rem'}}>Create vetted, on-brand visualizations of visitor personas and data stories.</p>
+                   </div>
+                   <div className="badge badge-green">Gemini 3 Pro</div>
+                </div>
+
+                <div className="grid-2">
+                    <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
+                        <div>
+                            <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Prompt</label>
+                            <textarea 
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="E.g., An infographic style illustration of a wealthy couple in their 50s enjoying a luxury coastal dinner at sunset in Dana Point, vector art style..."
+                                style={{width:'100%', height:'120px', padding:'12px', borderRadius:'8px', border:'1px solid #CBD5E0', fontFamily:'inherit', resize:'none'}}
+                            />
+                        </div>
+                        <div>
+                             <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Image Quality</label>
+                             <div style={{display:'flex', gap:'12px'}}>
+                                 {['1K', '2K', '4K'].map(opt => (
+                                     <button 
+                                        key={opt}
+                                        onClick={() => setSize(opt)}
+                                        style={{
+                                            padding:'8px 16px', 
+                                            borderRadius:'6px', 
+                                            border: size === opt ? '2px solid #006B76' : '1px solid #CBD5E0',
+                                            background: size === opt ? '#E6FFFA' : 'white',
+                                            color: size === opt ? '#006B76' : '#4A5568',
+                                            fontWeight: size === opt ? 'bold' : 'normal',
+                                            cursor:'pointer'
+                                        }}
+                                     >
+                                         {opt}
+                                     </button>
+                                 ))}
+                             </div>
+                        </div>
+                        <button 
+                            onClick={generateImage}
+                            disabled={loading || !prompt}
+                            style={{
+                                marginTop:'8px',
+                                padding:'12px',
+                                background: loading ? '#CBD5E0' : '#006B76',
+                                color:'white',
+                                border:'none',
+                                borderRadius:'8px',
+                                fontWeight:'bold',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                display:'flex',
+                                alignItems:'center',
+                                justifyContent:'center',
+                                gap:'8px'
+                            }}
+                        >
+                            {loading ? 'Generating...' : <><span>✨</span> Generate Visualization</>}
+                        </button>
+                    </div>
+
+                    <div style={{background:'#F7FAFC', borderRadius:'8px', border:'1px dashed #CBD5E0', display:'flex', alignItems:'center', justifyContent:'center', minHeight:'300px', overflow:'hidden'}}>
+                        {imageUrl ? (
+                            <img src={imageUrl} alt="Generated Visualization" style={{maxWidth:'100%', borderRadius:'4px', boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}} />
+                        ) : (
+                            <div style={{textAlign:'center', color:'#A0AEC0'}}>
+                                <div style={{fontSize:'2rem', marginBottom:'8px'}}>🖼️</div>
+                                <div>Preview Area</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- TABS ---
 
 const TabPulse = () => (
   <div className="tab-content fade-in">
-    <CityImpactPanel />
+    <DmoImpactPanel />
     <HeadlineInsight headline={executiveData.pulse.headline} />
     <LiveIntelligenceCard />
     <div className="grid-4" style={{ marginTop: '28px' }}>
@@ -979,19 +1146,53 @@ const TabStrategic = () => (
   </div>
 );
 
+const TabGlossary = () => (
+  <div className="tab-content fade-in">
+    <div className="card">
+      <div style={{ borderBottom: '1px solid #E2E8F0', marginBottom: '20px', paddingBottom: '12px' }}>
+         <h3 style={{ margin: 0, color: '#1A365D' }}>Data Glossary & Sources</h3>
+         <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#718096' }}>Definitions of key industry metrics and data sources used in this dashboard.</p>
+      </div>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+        {glossaryTerms.map((term, i) => (
+          <div key={i} style={{ padding: '16px', background: '#F7FAFC', borderRadius: '8px', borderLeft: '3px solid #006B76' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+               <div style={{ fontWeight: 'bold', color: '#2D3748', fontSize: '0.95rem' }}>{term.term}</div>
+               <span style={{ fontSize: '0.7rem', background: '#EDF2F7', padding: '2px 8px', borderRadius: '4px', color: '#4A5568' }}>{term.source}</span>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#4A5568', lineHeight: '1.5' }}>{term.def}</div>
+          </div>
+        ))}
+      </div>
+      
+      <div style={{ marginTop: '28px', padding: '20px', background: '#EBF8FF', borderRadius: '8px', border: '1px solid #BEE3F8' }}>
+        <h4 style={{ margin: '0 0 8px 0', color: '#2C5282' }}>About Visit Dana Point (DMO)</h4>
+        <p style={{ margin: 0, fontSize: '0.9rem', color: '#2A4365', lineHeight: '1.6' }}>
+          Visit Dana Point is the non-profit Destination Marketing Organization (DMO) responsible for marketing Dana Point as a premier destination. 
+          Our mission is to drive visitor demand that generates economic impact for local businesses, supports jobs, and contributes to the quality of life 
+          in our community through tax revenue. We are a distinct entity from the City of Dana Point government.
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
 // --- MAIN APP ---
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('pulse');
 
   const tabs = [
-    { id: 'pulse', label: 'City Impact Overview', icon: Icons.Pulse },
-    { id: 'hospitality', label: 'Hotel Health & Revenue', icon: Icons.Hotel },
-    { id: 'economics', label: 'Economic Engine', icon: Icons.Money },
-    { id: 'growth', label: 'Visitor Origins', icon: Icons.Growth },
-    { id: 'digital', label: 'Marketing Funnel', icon: Icons.Digital },
-    { id: 'events', label: 'Events & Community', icon: Icons.Event },
-    { id: 'strategic', label: 'Strategic Roadmap', icon: Icons.Strategy },
+    { id: 'pulse', label: 'Visit Dana Point Impact Overview', icon: Icons.Pulse },
+    { id: 'hospitality', label: 'Hotel Partnership Health & Revenue', icon: Icons.Hotel },
+    { id: 'economics', label: 'Destination Economic Engine', icon: Icons.Money },
+    { id: 'growth', label: 'Target Market Visitor Origins', icon: Icons.Growth },
+    { id: 'digital', label: 'Marketing Funnel & Conversion', icon: Icons.Digital },
+    { id: 'events', label: 'Signature Events & Community Activation', icon: Icons.Event },
+    { id: 'strategic', label: '2026 Strategic Initiative Roadmap', icon: Icons.Strategy },
+    { id: 'creative', label: 'Visual Intelligence Studio', icon: Icons.Image }, // New Tab
+    { id: 'glossary', label: 'Data Glossary & Sources', icon: Icons.Info },
   ];
 
   const renderContent = () => {
@@ -1003,6 +1204,8 @@ const App = () => {
       case 'digital': return <TabDigital />;
       case 'events': return <TabEvents />;
       case 'strategic': return <TabStrategic />;
+      case 'creative': return <VisualIntelligenceTab />;
+      case 'glossary': return <TabGlossary />;
       default: return <TabPulse />;
     }
   };
