@@ -243,7 +243,7 @@ const Footer = () => (
   </div>
 );
 
-const KPICard = ({ data }) => {
+const KPICard: React.FC<{data: any}> = ({ data }) => {
   const isGreen = data.status === 'green';
   const isRed = data.status === 'red';
   const color = isGreen ? '#38A169' : isRed ? '#E53E3E' : '#D69E2E';
@@ -288,7 +288,7 @@ const DmoImpactPanel = () => {
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>${totGenerated}M</div>
           <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Calculated from Hotel Revenue (10% TOT)</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Finance Dept / Calculated</div>
+          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Finance / Municipal Code</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
           <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -297,7 +297,7 @@ const DmoImpactPanel = () => {
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>{jobsSupported}</div>
           <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Estimated via Industry Multipliers</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Industry Data</div>
+          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Bureau of Labor Statistics</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
           <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -693,27 +693,57 @@ const VisualIntelligenceTab = () => {
     const [size, setSize] = useState('1K');
     const [loading, setLoading] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
+    
+    // Enhanced Controls State
+    const [selectedInitiative, setSelectedInitiative] = useState('');
+    const [style, setStyle] = useState('Photorealistic');
+    const [lighting, setLighting] = useState('Natural Light');
+    const [camera, setCamera] = useState('Eye Level');
+
+    const handleInitiativeChange = (e) => {
+        const name = e.target.value;
+        setSelectedInitiative(name);
+        if (name) {
+            const init = executiveData.strategic.initiatives.find(i => i.name === name);
+            let context = "";
+            if (init.name === 'Website Booking Fix') {
+                context = "Show a modern, sleek website interface on a mobile device showing a completed hotel booking confirmation for a luxury Dana Point resort. High conversion, clean UX.";
+            } else if (init.name === 'Day-Tripper Campaign') {
+                context = "A vibrant lifestyle shot of a young couple checking into a boutique hotel in Dana Point at sunset, transitioning from day-trip to overnight stay. Warm, inviting atmosphere.";
+            } else if (init.name === 'Winter Wellness Fest') {
+                context = "A serene outdoor yoga session overlooking the Dana Point ocean cliffs during winter, sunny but crisp, wellness festival atmosphere, healthy and active.";
+            } else if (init.name === 'Loyalty Program') {
+                context = "A premium loyalty card or mobile app screen showing 'Visit Dana Point Rewards' with exclusive perks, gold and teal color palette, feeling of exclusivity.";
+            } else {
+                 context = `Visual representation of the '${init.name}' initiative, aiming for an ROI of ${init.roi}. Professional business context.`;
+            }
+            setPrompt(context);
+        }
+    };
 
     const generateImage = async () => {
         if (!prompt) return;
         setLoading(true);
         setImageUrl(null);
+        
+        // Construct enhanced prompt
+        const enhancedPrompt = `${prompt} \n\nStyle Attributes: ${style} style, ${lighting} lighting, ${camera} view. High resolution, professional commercial photography.`;
+
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-image-preview',
                 contents: {
-                    parts: [{ text: prompt }]
+                    parts: [{ text: enhancedPrompt }]
                 },
                 config: {
                     imageConfig: {
                         imageSize: size,
-                        aspectRatio: "16:9" // Cinematic for presentations
+                        aspectRatio: "16:9" 
                     }
                 }
             });
 
-            // Find image part
             for (const part of response.candidates[0].content.parts) {
                 if (part.inlineData) {
                     setImageUrl(`data:image/png;base64,${part.inlineData.data}`);
@@ -725,6 +755,35 @@ const VisualIntelligenceTab = () => {
             alert("Image generation failed. Please try again.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const downloadImage = (format) => {
+        if (!imageUrl) return;
+        const img = new Image();
+        img.src = imageUrl;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const link = document.createElement('a');
+            link.download = `vdp-visual-${Date.now()}.${format.toLowerCase()}`;
+            link.href = canvas.toDataURL(`image/${format === 'JPG' ? 'jpeg' : 'png'}`, 0.9);
+            link.click();
+        };
+    };
+
+    const shareImage = async () => {
+        if (!imageUrl) return;
+        try {
+            const res = await fetch(imageUrl);
+            const blob = await res.blob();
+            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+            alert("Image copied to clipboard!");
+        } catch (e) {
+            alert("Unable to copy to clipboard.");
         }
     };
 
@@ -741,37 +800,72 @@ const VisualIntelligenceTab = () => {
 
                 <div className="grid-2">
                     <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
+                        
+                        {/* Initiative Selector */}
                         <div>
-                            <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Prompt</label>
+                            <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Strategic Context (Optional)</label>
+                            <select 
+                                value={selectedInitiative} 
+                                onChange={handleInitiativeChange}
+                                style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #CBD5E0', background:'white', color: '#2D3748'}}
+                            >
+                                <option value="">Select an Initiative...</option>
+                                {executiveData.strategic.initiatives.map((init, i) => (
+                                    <option key={i} value={init.name}>{init.name} (ROI: {init.roi})</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Prompt */}
+                        <div>
+                            <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Visual Prompt</label>
                             <textarea 
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="E.g., An infographic style illustration of a wealthy couple in their 50s enjoying a luxury coastal dinner at sunset in Dana Point, vector art style..."
-                                style={{width:'100%', height:'120px', padding:'12px', borderRadius:'8px', border:'1px solid #CBD5E0', fontFamily:'inherit', resize:'none'}}
+                                placeholder="Describe the visualization..."
+                                style={{width:'100%', height:'100px', padding:'12px', borderRadius:'8px', border:'1px solid #CBD5E0', fontFamily:'inherit', resize:'none'}}
                             />
                         </div>
-                        <div>
-                             <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Image Quality</label>
-                             <div style={{display:'flex', gap:'12px'}}>
-                                 {['1K', '2K', '4K'].map(opt => (
-                                     <button 
-                                        key={opt}
-                                        onClick={() => setSize(opt)}
-                                        style={{
-                                            padding:'8px 16px', 
-                                            borderRadius:'6px', 
-                                            border: size === opt ? '2px solid #006B76' : '1px solid #CBD5E0',
-                                            background: size === opt ? '#E6FFFA' : 'white',
-                                            color: size === opt ? '#006B76' : '#4A5568',
-                                            fontWeight: size === opt ? 'bold' : 'normal',
-                                            cursor:'pointer'
-                                        }}
-                                     >
-                                         {opt}
-                                     </button>
-                                 ))}
+
+                        {/* Style Controls */}
+                        <div className="grid-2" style={{gap: '12px'}}>
+                             <div>
+                                <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Style</label>
+                                <select value={style} onChange={(e)=>setStyle(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
+                                    <option>Photorealistic</option>
+                                    <option>Vector Art</option>
+                                    <option>Infographic</option>
+                                    <option>Cinematic</option>
+                                </select>
+                             </div>
+                             <div>
+                                <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Lighting</label>
+                                <select value={lighting} onChange={(e)=>setLighting(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
+                                    <option>Natural Light</option>
+                                    <option>Golden Hour</option>
+                                    <option>Studio Lighting</option>
+                                    <option>Moody</option>
+                                </select>
+                             </div>
+                             <div>
+                                <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Camera</label>
+                                <select value={camera} onChange={(e)=>setCamera(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
+                                    <option>Eye Level</option>
+                                    <option>Wide Angle</option>
+                                    <option>Drone / Aerial</option>
+                                    <option>Macro / Close-up</option>
+                                </select>
+                             </div>
+                             <div>
+                                 <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Resolution</label>
+                                 <select value={size} onChange={(e)=>setSize(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
+                                     <option value="1K">1K</option>
+                                     <option value="2K">2K</option>
+                                     <option value="4K">4K</option>
+                                 </select>
                              </div>
                         </div>
+
                         <button 
                             onClick={generateImage}
                             disabled={loading || !prompt}
@@ -794,13 +888,29 @@ const VisualIntelligenceTab = () => {
                         </button>
                     </div>
 
-                    <div style={{background:'#F7FAFC', borderRadius:'8px', border:'1px dashed #CBD5E0', display:'flex', alignItems:'center', justifyContent:'center', minHeight:'300px', overflow:'hidden'}}>
-                        {imageUrl ? (
-                            <img src={imageUrl} alt="Generated Visualization" style={{maxWidth:'100%', borderRadius:'4px', boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}} />
-                        ) : (
-                            <div style={{textAlign:'center', color:'#A0AEC0'}}>
-                                <div style={{fontSize:'2rem', marginBottom:'8px'}}>🖼️</div>
-                                <div>Preview Area</div>
+                    <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
+                        <div style={{background:'#F7FAFC', borderRadius:'8px', border:'1px dashed #CBD5E0', display:'flex', alignItems:'center', justifyContent:'center', minHeight:'300px', flex: 1, overflow:'hidden', position:'relative'}}>
+                            {imageUrl ? (
+                                <img src={imageUrl} alt="Generated Visualization" style={{maxWidth:'100%', borderRadius:'4px', boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}} />
+                            ) : (
+                                <div style={{textAlign:'center', color:'#A0AEC0'}}>
+                                    <div style={{fontSize:'2rem', marginBottom:'8px'}}>🖼️</div>
+                                    <div>Preview Area</div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {imageUrl && (
+                            <div style={{display:'flex', gap:'12px', justifyContent:'flex-end'}}>
+                                <button onClick={shareImage} style={{padding:'8px 16px', background:'white', border:'1px solid #CBD5E0', borderRadius:'6px', color:'#2D3748', cursor:'pointer', fontWeight:'600'}}>
+                                    Copy to Clipboard
+                                </button>
+                                <button onClick={() => downloadImage('JPG')} style={{padding:'8px 16px', background:'white', border:'1px solid #CBD5E0', borderRadius:'6px', color:'#2D3748', cursor:'pointer', fontWeight:'600'}}>
+                                    Download JPG
+                                </button>
+                                <button onClick={() => downloadImage('PNG')} style={{padding:'8px 16px', background:'#2D3748', border:'none', borderRadius:'6px', color:'white', cursor:'pointer', fontWeight:'600'}}>
+                                    Download PNG
+                                </button>
                             </div>
                         )}
                     </div>
