@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visit Dana Point Strategic Dashboard</title>
+    <style>
+      :root {
+        /* VDP Brand Colors */
+        --primary: #006B76; /* VDP Teal */
+        --primary-dark: #004E56;
+        --secondary: #FDFBF7; /* Warm Sand Background */
+        --accent: #F6AD55; /* Sunset Orange */
+        --navy: #1A365D; /* Deep Ocean */
+        
+        /* Functional Colors */
+        --text-dark: #2D3748;
+        --text-light: #718096;
+        --success: #38A169;
+        --warning: #D69E2E;
+        --danger: #E53E3E;
+        --white: #ffffff;
+        --border: #E2E8F0;
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        background-color: var(--secondary);
+        color: var(--text-dark);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* Dashboard Layout */
+      .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+      }
+
+      .sidebar {
+        width: 280px;
+        background-color: var(--navy);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        z-index: 10;
+      }
+
+      .logo-area {
+        padding: 28px 24px;
+        background: rgba(0,0,0,0.1);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      
+      .logo-text {
+        font-family: 'Georgia', serif; /* More elegant for the brand */
+        font-weight: 700;
+        font-size: 1.4rem;
+        letter-spacing: 0.02em;
+        color: var(--white);
+        line-height: 1.2;
+      }
+      
+      .logo-sub {
+        font-family: sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: #A0AEC0;
+        margin-top: 8px;
+      }
+
+      .nav-links {
+        flex: 1;
+        padding: 24px 0;
+        overflow-y: auto;
+      }
+
+      .nav-item {
+        padding: 14px 24px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 0.9rem;
+        border-left: 4px solid transparent;
+        color: #CBD5E0;
+        font-weight: 500;
+      }
+
+      .nav-item:hover {
+        background-color: rgba(255,255,255,0.05);
+        color: white;
+      }
+
+      .nav-item.active {
+        background-color: rgba(0, 107, 118, 0.4); /* VDP Teal with opacity */
+        border-left-color: #4FD1C5;
+        color: white;
+        font-weight: 600;
+      }
+
+      .main-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 32px 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        background-image: linear-gradient(to bottom, #FDFBF7 0%, #F7FAFC 100%);
+      }
+
+      /* Utility Cards */
+      .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 28px;
+        border: 1px solid var(--border);
+        transition: transform 0.2s ease-in-out;
+      }
+      
+      .card:hover {
+        border-color: #CBD5E0;
+      }
+
+      .card h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+        color: var(--navy);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        border-bottom: 2px solid #EDF2F7;
+        padding-bottom: 12px;
+      }
+
+      .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+      .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+      .grid-1 { display: grid; grid-template-columns: 1fr; gap: 24px; }
+
+      /* KPIs */
+      .kpi-value {
+        font-size: 2.4rem;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+      }
+
+      /* Data Source Label */
+      .source-label {
+        font-size: 0.65rem;
+        color: #A0AEC0;
+        font-style: italic;
+        margin-top: 4px;
+        display: block;
+        text-align: right;
+      }
+
+      /* Badge */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .badge-green { background: #E6FFFA; color: #234E52; border: 1px solid #B2F5EA; }
+      .badge-yellow { background: #FFFFF0; color: #975A16; border: 1px solid #FBD38D; }
+      .badge-red { background: #FFF5F5; color: #9B2C2C; border: 1px solid #FEB2B2; }
+
+      /* Tooltip */
+      .tooltip-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: #E2E8F0;
+        color: var(--text-light);
+        font-size: 11px;
+        font-weight: bold;
+        margin-left: 8px;
+        cursor: help;
+        position: relative;
+        transition: background-color 0.2s;
+      }
+      
+      .tooltip-icon:hover {
+        background-color: var(--primary);
+        color: white;
+      }
+      
+      .tooltip-icon:hover .tooltip-content {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .tooltip-content {
+        visibility: hidden;
+        width: 260px;
+        background-color: var(--navy);
+        color: #fff;
+        text-align: left;
+        border-radius: 8px;
+        padding: 12px;
+        position: absolute;
+        z-index: 100;
+        bottom: 135%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.2s;
+        font-size: 0.75rem;
+        font-weight: 400;
+        line-height: 1.5;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        text-transform: none;
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .tooltip-content::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -6px;
+        border-width: 6px;
+        border-style: solid;
+        border-color: var(--navy) transparent transparent transparent;
+      }
+
+      /* Animation */
+      .fade-in { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+      /* Footer / Copyright */
+      .app-footer {
+        margin-top: 40px;
+        border-top: 1px solid var(--border);
+        padding-top: 24px;
+        text-align: center;
+        color: var(--text-light);
+        font-size: 0.75rem;
+      }
+
+      /* Mobile */
+      @media (max-width: 1024px) {
+        .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 768px) {
+        .dashboard-container { flex-direction: column; }
+        .sidebar { width: 100%; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding-right: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .nav-links { display: flex; flex-direction: row; padding: 0; }
+        .nav-item { border-left: none; border-bottom: 4px solid transparent; padding: 16px; white-space: nowrap; }
+        .nav-item.active { border-left-color: transparent; border-bottom-color: #4FD1C5; background: transparent; }
+        .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+        .main-content { padding: 16px; }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
