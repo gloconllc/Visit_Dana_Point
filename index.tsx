@@ -243,7 +243,7 @@ const Footer = () => (
   </div>
 );
 
-const KPICard: React.FC<{data: any}> = ({ data }) => {
+const KPICard = ({ data }) => {
   const isGreen = data.status === 'green';
   const isRed = data.status === 'red';
   const color = isGreen ? '#38A169' : isRed ? '#E53E3E' : '#D69E2E';
@@ -288,7 +288,7 @@ const DmoImpactPanel = () => {
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>${totGenerated}M</div>
           <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Calculated from Hotel Revenue (10% TOT)</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Finance / Municipal Code</div>
+          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Finance Dept / Calculated</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
           <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -297,7 +297,7 @@ const DmoImpactPanel = () => {
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '800' }}>{jobsSupported}</div>
           <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Estimated via Industry Multipliers</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Bureau of Labor Statistics</div>
+          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Industry Data</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
           <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
@@ -347,7 +347,7 @@ const LiveIntelligenceCard = () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: 'Perform a targeted search for the latest hospitality industry news and tourism data relevant to Dana Point, CA. You MUST prioritize information from: CoStar, Tourism Economics, Destinations International, Brand USA, Visit California, and State of California sources. Summarize 3-4 key trends, reports, or economic indicators that impact the local hotel and tourism market. Format strictly as a bulleted list.',
+          contents: 'Search for recent news and resources related to tourism in Dana Point, Orange County, and California. Focus on items that impact a Destination Marketing Organization (DMO). Return a list of 3-4 items. For each, state the resource/news, whether the impact is Positive or Negative for Visit Dana Point, and specifically how it relates to our vetted metrics: $481M Visitor Spend, 64.2% Occupancy, or $65.6M Partner Revenue.',
           config: {
             tools: [{ googleSearch: {} }]
           }
