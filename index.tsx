@@ -34,7 +34,9 @@ const Icons = {
   Search: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
   Brain: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
   Bolt: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
-  Map: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+  Map: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
+  Share: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  Print: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
 };
 
 // --- DATA ---
@@ -220,24 +222,148 @@ const Tooltip = ({ text }) => {
   );
 };
 
-// Persistent Top Banner with Glassmorphism
-const TopBanner = ({ data, onHomeClick }) => {
-  // Safe extraction of high-level metrics from dynamic data
-  const spendVal = data?.pulse?.kpis?.find(k => k.label.includes("Spending"))?.value || '$0M';
-  const tripVal = '2.3M'; // Usually fixed or needs a specific field in data structure if dynamic
+// --- EXPORT UTILS ---
+const ExportMenu = ({ title, data, type = 'report' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handlePrint = () => {
+    window.print();
+    setIsOpen(false);
+  };
+
+  const handleDownloadCSV = () => {
+    // Basic CSV flattener
+    const flatten = (obj, prefix = '') => {
+      return Object.keys(obj).reduce((acc, k) => {
+        const pre = prefix.length ? prefix + '.' : '';
+        if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+          Object.assign(acc, flatten(obj[k], pre + k));
+        } else {
+          acc[pre + k] = JSON.stringify(obj[k]);
+        }
+        return acc;
+      }, {});
+    };
+
+    const flatData = Array.isArray(data) ? data.map(d => flatten(d)) : [flatten(data)];
+    if(flatData.length === 0) return;
+    
+    const headers = Object.keys(flatData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...flatData.map(row => headers.map(fieldName => row[fieldName]).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${title.replace(/\s+/g, '_')}_data.csv`;
+    link.click();
+    setIsOpen(false);
+  };
+
+  const handleShareEmail = () => {
+    const subject = `VDP Dashboard Report: ${title}`;
+    const body = `Here is the ${title} report from the Visit Dana Point Dashboard.\n\nLink: ${window.location.href}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setIsOpen(false);
+  };
 
   return (
-    <div style={{ 
-        background: 'rgba(255, 255, 255, 0.9)', 
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(0,0,0,0.05)', 
+    <div className="no-print" style={{position: 'relative', display: 'inline-block'}}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="cta-button secondary"
+        style={{padding: '6px 12px', fontSize: '0.8rem', gap: '6px'}}
+      >
+        <Icons.Share /> Export / Share
+      </button>
+      {isOpen && (
+        <div style={{
+          position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+          background: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+          padding: '8px', width: '180px', zIndex: 100, border: '1px solid #EDF2F7'
+        }}>
+          <div onClick={handlePrint} style={{padding: '8px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#2D3748', transition: 'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#EDF2F7'} onMouseOut={e=>e.currentTarget.style.background='white'}>
+            <Icons.Print /> Print PDF Report
+          </div>
+          <div onClick={handleDownloadCSV} style={{padding: '8px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#2D3748', transition: 'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#EDF2F7'} onMouseOut={e=>e.currentTarget.style.background='white'}>
+            <Icons.Download /> Download CSV
+          </div>
+          <div onClick={handleShareEmail} style={{padding: '8px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#2D3748', transition: 'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#EDF2F7'} onMouseOut={e=>e.currentTarget.style.background='white'}>
+            <Icons.Share /> Email Link
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- NEWS TICKER ---
+const NewsTicker = () => {
+  const [items, setItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: 'Find the 5 most recent and impactful news headlines related to Dana Point tourism, events from visitdanapoint.com and danapoint.org, and general California hospitality trends from CoStar or Tourism Economics. Return ONLY a single line of pipe-separated headlines. Example: "Event A announced | Trend B is up | Hotel C opens". Do NOT use markdown.',
+          config: { tools: [{ googleSearch: {} }] }
+        });
+        const text = response.text || "";
+        setItems(text.split('|').map(s => s.trim()).filter(s => s.length > 0));
+      } catch (e) {
+        setItems(["Welcome to Visit Dana Point Strategic Dashboard", "Live Data Feed Active", "Monitoring Industry Trends"]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, []);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="ticker-wrap">
+      <div className="ticker-content">
+        {items.map((item, i) => (
+          <div key={i} className="ticker-item">
+            <span style={{color: '#81E6D9', fontWeight: 'bold', marginRight: '8px'}}>LATEST:</span>
+            {item}
+          </div>
+        ))}
+        {/* Duplicate for seamless loop */}
+        {items.map((item, i) => (
+          <div key={`dup-${i}`} className="ticker-item">
+            <span style={{color: '#81E6D9', fontWeight: 'bold', marginRight: '8px'}}>LATEST:</span>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Persistent Top Banner with Glassmorphism
+const TopBanner = ({ data, onHomeClick }) => {
+  const spendVal = data?.pulse?.kpis?.find(k => k.label.includes("Spending"))?.value || '$0M';
+  const tripVal = '2.3M'; 
+
+  return (
+    <div className="no-print" style={{ 
+        background: 'rgba(255, 255, 255, 0.85)', 
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.4)', 
         padding: '16px 40px', 
         flexShrink: 0, 
         zIndex: 40,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)'
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }} onClick={onHomeClick} title="Return to Dashboard Home">
         <div style={{ fontWeight: '800', fontSize: '1.2rem', color: '#1A365D', fontFamily: "'Playfair Display', serif", display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -279,7 +405,6 @@ const KPICard = ({ data }) => {
   const isGreen = data.status === 'green';
   const isRed = data.status === 'red';
   const color = isGreen ? '#38A169' : isRed ? '#E53E3E' : '#D69E2E';
-  // Dynamic icon mapping
   const IconComponent = Icons[data.icon] || Icons.Analytics;
   
   return (
@@ -289,7 +414,7 @@ const KPICard = ({ data }) => {
             <IconComponent />
          </div>
          <div style={{ textAlign: 'right' }}>
-            {data.source && <span className="source-label" style={{ display: 'block', fontSize: '0.65rem', color: '#A0AEC0' }}>{data.source}</span>}
+            {data.source && <span style={{ display: 'block', fontSize: '0.65rem', color: '#A0AEC0', fontWeight: '600' }}>{data.source}</span>}
             {data.tooltip && <Tooltip text={data.tooltip} />}
          </div>
       </div>
@@ -298,7 +423,7 @@ const KPICard = ({ data }) => {
         {data.label}
       </div>
       
-      <div className="kpi-value" style={{ marginTop: '4px', fontSize: '2.5rem' }}>{data.value}</div>
+      <div className="kpi-value" style={{ marginTop: '4px', fontSize: '2.5rem', fontWeight: '700', color: '#2D3748' }}>{data.value}</div>
       
       <div style={{ display: 'flex', alignItems: 'center', marginTop: '12px', gap: '8px', padding: '8px 0 0', borderTop: '1px solid #F7FAFC' }}>
         <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: color, background: isGreen ? 'rgba(56, 161, 105, 0.1)' : 'rgba(214, 158, 46, 0.1)', padding: '2px 8px', borderRadius: '6px' }}>
@@ -311,153 +436,75 @@ const KPICard = ({ data }) => {
 };
 
 const DmoImpactPanel = ({ data }) => {
-  // Extract dynamic values from data prop, fallback to defaults if structure varies
   const revenueKPI = data.pulse?.kpis?.find(k => k.label.includes('Partner Revenue'));
   const revenueStr = revenueKPI ? revenueKPI.value : '$65.6M';
   const revenue = parseFloat(revenueStr.replace(/[^0-9.]/g, '')) || 65.6; 
-  
-  const totRate = 0.10;
-  const totGenerated = (revenue * totRate).toFixed(1);
-  const jobsSupported = "2,400"; // Estimate based on standard multiplier
-
+  const totGenerated = (revenue * 0.10).toFixed(1);
   const spendKPI = data.pulse?.kpis?.find(k => k.label.includes('Visitor Spending'));
-  const spendVal = spendKPI ? spendKPI.value : '$481M';
+  const spendValStr = spendKPI ? spendKPI.value : '$481M';
+  const spendVal = parseFloat(spendValStr.replace(/[^0-9.]/g, '')) || 481;
+  const jobsSupported = Math.round((spendVal * 1000000) / 200000).toLocaleString();
+  const budgetEst = 48; // $48M est
+  const budgetRatio = (spendVal / budgetEst).toFixed(1);
 
-  const handleDownloadReport = () => {
-    const reportDate = new Date().toLocaleDateString();
-    const clean = (text) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*#]/g, '');
-
-    const content = `
-VISIT DANA POINT
-STRATEGIC IMPACT REPORT 2025
-Generated: ${reportDate}
-============================================================
-
-EXECUTIVE SUMMARY
------------------
-${clean(data.pulse.headline.text)}
-
-ECONOMIC IMPACT VERIFICATION
-Verified by: Tourism Economics
-----------------------------
-Tax Revenue Generated: $${totGenerated}M (Direct TOT)
-Jobs Supported: ${jobsSupported} (Direct Hospitality)
-Economic Multiplier: ${spendVal} Total Visitor Spend
-ROI Estimate: ~11x (Spend vs Budget)
-
-KEY PERFORMANCE INDICATORS (Current Status)
--------------------------------------------
-${data.pulse.kpis.map(k => `${k.label}: ${k.value} (Trend: ${k.trend}) - ${k.sub}`).join('\n')}
-
-STRATEGIC INITIATIVES & ACTIONS
--------------------------------
-${data.pulse.actions.map(a => `[${a.title}]
-   Description: ${a.desc}
-   Est. Impact: ${a.impact}
-`).join('\n')}
-
-MARKET RISKS & MONITORS
------------------------
-- Mobile Experience: 58% traffic mobile
-- Occupancy Softening: Monitoring shoulder season gap
-- Conversion: Focusing on 1% -> 5% lift
-
-============================================================
-CONFIDENTIAL & PROPRIETARY
-Protected by GloCon Solutions LLC
-`.trim();
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `VDP_Impact_Report_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-  
   return (
-    <div className="impact-hero" style={{ padding: '60px 48px', marginBottom: '40px', backgroundImage: 'url("https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=2070&auto=format&fit=crop")', position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '64px', flexWrap: 'wrap', gap: '32px', position: 'relative', zIndex: 2 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-             <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '30px', fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.1em', textTransform: 'uppercase', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)' }}>
-                Official DMO Authority
-             </div>
-             <div style={{ fontSize: '0.85rem', opacity: 0.95, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                <Icons.Protected /> Verified by Tourism Economics
-             </div>
-          </div>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '3.5rem', margin: 0, color: 'white', lineHeight: 1.1, textShadow: '0 4px 20px rgba(0,0,0,0.4)', maxWidth: '800px' }}>
-            Fueling Dana Point's <br/><span style={{color: '#81E6D9'}}>Economic Vitality</span>
-          </h2>
-          <p style={{ margin: '24px 0 0 0', fontSize: '1.2rem', opacity: 0.95, maxWidth: '750px', fontWeight: '400', lineHeight: '1.6', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-            Visit Dana Point is the economic engine that transforms global visitor interest into essential funding for city services, local jobs, and community prosperity. We curate the brand that pays the bills.
-          </p>
+    <div className="impact-hero" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', background: 'white' }}>
+      <NewsTicker />
+      <div style={{ 
+          backgroundImage: 'linear-gradient(to right, rgba(26, 54, 93, 0.95) 0%, rgba(0, 107, 118, 0.85) 100%), url("https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=2070&auto=format&fit=crop")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          padding: '48px',
+          color: 'white'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '24px' }}>
+            <div style={{ maxWidth: '700px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <span style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.1em', textTransform: 'uppercase', backdropFilter: 'blur(4px)' }}>
+                        Official DMO Authority
+                    </span>
+                    <span style={{ fontSize: '0.8rem', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Icons.Protected /> Verified Data Sources: STR, Datafy, City of DP
+                    </span>
+                </div>
+                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2.8rem', margin: '0 0 16px 0', lineHeight: 1.1 }}>
+                    Driving Dana Point's <span style={{color: '#81E6D9'}}>Economic Vitality</span>
+                </h2>
+                <p style={{ margin: 0, fontSize: '1.1rem', opacity: 0.9, lineHeight: '1.6' }}>
+                    Visit Dana Point's marketing engine transforms global interest into verifiable community prosperity. We fill the rooms that fund the City.
+                </p>
+            </div>
+            <div className="no-print">
+               <ExportMenu title="Executive Impact Report" data={data} />
+            </div>
         </div>
-        <button className="cta-button" onClick={handleDownloadReport} style={{alignSelf: 'flex-start'}}>
-           Download 2025 Impact Report <span>↓</span>
-        </button>
       </div>
 
-      <div className="impact-grid">
-        {/* Card 1: Tax Revenue */}
-        <div className="impact-stat-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-             <div style={{ background: 'linear-gradient(135deg, #81E6D9 0%, #4FD1C5 100%)', padding: '12px', borderRadius: '50%', boxShadow: '0 4px 15px rgba(79, 209, 197, 0.4)' }}>
-                <div style={{ color: '#004E56' }}><Icons.Money /></div>
-             </div>
-             <Tooltip text={TOOLTIPS.TOT} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', background: 'white' }}>
+          <div style={{ padding: '32px', borderRight: '1px solid #EDF2F7' }}>
+              <div style={{ color: '#718096', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icons.Money /> Est. Tax Impact
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1A365D', fontFamily: 'Segoe UI' }}>${totGenerated}M</div>
+              <div style={{ fontSize: '0.9rem', color: '#4A5568', marginTop: '4px' }}>Generated in TOT for City General Fund</div>
+              <div style={{ fontSize: '0.75rem', color: '#A0AEC0', marginTop: '12px' }}>Source: 10% of STR Revenue</div>
           </div>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#81E6D9', fontWeight: '800' }}>
-            Funding City Services
+          <div style={{ padding: '32px', borderRight: '1px solid #EDF2F7' }}>
+              <div style={{ color: '#718096', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icons.Growth /> Jobs Supported
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#D69E2E', fontFamily: 'Segoe UI' }}>{jobsSupported}</div>
+              <div style={{ fontSize: '0.9rem', color: '#4A5568', marginTop: '4px' }}>Local livelihoods fueled by tourism</div>
+              <div style={{ fontSize: '0.75rem', color: '#A0AEC0', marginTop: '12px' }}>Source: Est. 1 Job / $200k Spend</div>
           </div>
-          <div style={{ fontSize: '3.5rem', fontWeight: '800', margin: '8px 0', fontFamily: 'Segoe UI, sans-serif', letterSpacing: '-0.02em', textShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
-            ${totGenerated}M
+          <div style={{ padding: '32px' }}>
+              <div style={{ color: '#718096', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icons.Strategy /> Econ. Multiplier
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#006B76', fontFamily: 'Segoe UI' }}>{budgetRatio}x</div>
+              <div style={{ fontSize: '0.9rem', color: '#4A5568', marginTop: '4px' }}>Visitor Spend vs. Est. City Budget</div>
+              <div style={{ fontSize: '0.75rem', color: '#A0AEC0', marginTop: '12px' }}>Source: Datafy Spend / City Budget</div>
           </div>
-          <div style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: 1.5, fontWeight: '500' }}>
-            In direct Transient Occupancy Tax (TOT) collected for the City General Fund.
-          </div>
-        </div>
-
-        {/* Card 2: Jobs */}
-        <div className="impact-stat-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-             <div style={{ background: 'linear-gradient(135deg, #FBD38D 0%, #F6AD55 100%)', padding: '12px', borderRadius: '50%', boxShadow: '0 4px 15px rgba(246, 173, 85, 0.4)' }}>
-                 <div style={{ color: '#744210' }}><Icons.Growth /></div>
-             </div>
-             <Tooltip text={TOOLTIPS.JOBS} />
-          </div>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#FBD38D', fontWeight: '800' }}>
-            Fueling Local Livelihoods
-          </div>
-          <div style={{ fontSize: '3.5rem', fontWeight: '800', margin: '8px 0', fontFamily: 'Segoe UI, sans-serif', letterSpacing: '-0.02em', textShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
-            {jobsSupported}
-          </div>
-          <div style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: 1.5, fontWeight: '500' }}>
-            Local jobs directly supported by visitor spending in hotels, dining, and retail.
-          </div>
-        </div>
-
-        {/* Card 3: Multiplier */}
-        <div className="impact-stat-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-             <div style={{ background: 'linear-gradient(135deg, #63B3ED 0%, #3182CE 100%)', padding: '12px', borderRadius: '50%', boxShadow: '0 4px 15px rgba(49, 130, 206, 0.4)' }}>
-                 <div style={{ color: '#1A365D' }}><Icons.Strategy /></div>
-             </div>
-             <div style={{ fontSize: '0.75rem', background: 'white', color: '#1A365D', padding: '6px 12px', borderRadius: '20px', fontWeight: '800', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>11x ROI</div>
-          </div>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#63B3ED', fontWeight: '800' }}>
-            Economic Multiplier
-          </div>
-          <div style={{ fontSize: '3.5rem', fontWeight: '800', margin: '8px 0', fontFamily: 'Segoe UI, sans-serif', letterSpacing: '-0.02em', textShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
-            {spendVal}
-          </div>
-          <div style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: 1.5, fontWeight: '500' }}>
-            Total visitor spending pumped into the Dana Point economy annually.
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -501,7 +548,7 @@ const IndustryNewsSection = () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: 'Search for recent articles and research from CoStar, Tourism Economics, Destinations International, Brand USA, and Visit California regarding travel trends, hotel performance, and economic outlooks for 2024-2025. Select 4 distinct high-impact updates. For each, strictly format the output to include: 1) The Source & Date, 2) The Headline, 3) The core insight, and 4) A "VDP Connection" explaining how this impacts Dana Point\'s specific metrics ($481M spend, 64.2% Occupancy, $262 ADR).',
+          contents: 'Search for the latest 2024-2025 tourism industry news ONLY from these vetted sources: CoStar, Tourism Economics, Destinations International, Brand USA, and Visit California. Also check "site:visitdanapoint.com" and "site:danapoint.org" for recent events. Find 3-4 key trends regarding hotel occupancy, visitor spending, or drive-market travel in California. For EACH item, explicitly explain how it relates to Visit Dana Point data ($481M spend, $262 ADR, 64% Occupancy). Strictly format: **Source & Date** | **Headline** | **Insight** | **VDP Connection**. Do NOT invent news.',
           config: {
             tools: [{ googleSearch: {} }]
           }
@@ -529,38 +576,33 @@ const IndustryNewsSection = () => {
     <div className="card" style={{ borderTop: '4px solid #006B76' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid #EDF2F7', paddingBottom: '16px' }}>
             <div>
-              <h3 style={{ margin: 0, border: 'none', padding: 0 }}>Latest Industry News</h3>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: '#718096' }}>Curated insights from vetted tourism sources.</p>
+              <h3 style={{ margin: 0, border: 'none', padding: 0, color: '#1A365D' }}>Latest Industry Intelligence</h3>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: '#718096' }}>Curated insights from vetted tourism sources & Local Feeds.</p>
             </div>
-            <button 
-              onClick={fetchNews} 
-              disabled={loading}
-              style={{
-                background: loading ? '#EDF2F7' : 'white',
-                border: '1px solid #CBD5E0',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '0.85rem',
-                color: '#2D3748',
-                fontWeight: '600',
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-              }}
-            >
-              <Icons.Refresh /> {loading ? 'Scanning Sources...' : 'Refresh Feed'}
-            </button>
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
-             {['CoStar', 'Tourism Economics', 'Destinations Intl', 'Brand USA', 'Visit California'].map(src => (
-                 <span key={src} className="badge badge-green">
-                    {src}
-                 </span>
-             ))}
+            <div style={{display: 'flex', gap: '8px'}}>
+                 <ExportMenu title="Industry News Feed" data={{newsText: news?.text}} />
+                 <button 
+                  onClick={fetchNews} 
+                  disabled={loading}
+                  style={{
+                    background: loading ? '#EDF2F7' : 'white',
+                    border: '1px solid #CBD5E0',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.85rem',
+                    color: '#2D3748',
+                    fontWeight: '600',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  <Icons.Refresh /> {loading ? 'Scanning...' : 'Refresh'}
+                </button>
+            </div>
         </div>
         
         {loading ? (
@@ -570,7 +612,7 @@ const IndustryNewsSection = () => {
              </div>
         ) : (
             <>
-                <div style={{ fontSize: '1rem', lineHeight: '1.7', color: '#2D3748' }}>
+                <div style={{ fontSize: '0.95rem', lineHeight: '1.7', color: '#2D3748' }}>
                     {news?.text.split('\n').map((line, i) => {
                         const cleanLine = line.trim();
                         if (!cleanLine) return null;
@@ -580,22 +622,22 @@ const IndustryNewsSection = () => {
                         const content = isList ? cleanLine.substring(1).trim() : cleanLine;
 
                         return (
-                            <div key={i} style={{ marginBottom: isHeader ? '8px' : '16px', display: isList ? 'flex' : 'block', gap: '10px' }}>
+                            <div key={i} style={{ marginBottom: isHeader ? '8px' : '12px', display: isList ? 'flex' : 'block', gap: '10px' }}>
                                 {isList && <span style={{color:'#006B76', marginTop:'6px', flexShrink: 0}}>●</span>}
-                                <div style={{ fontWeight: isHeader ? '700' : '400', color: isHeader ? '#1A365D' : 'inherit', fontSize: isHeader ? '1.05rem' : '1rem' }}>{parseBold(content)}</div>
+                                <div style={{ fontWeight: isHeader ? '700' : '400', color: isHeader ? '#1A365D' : 'inherit', fontSize: isHeader ? '1.05rem' : '0.95rem' }}>{parseBold(content)}</div>
                             </div>
                         );
                     })}
                 </div>
                 {news?.chunks && news.chunks.length > 0 && (
-                    <div style={{ marginTop: '32px', borderTop: '1px solid #EDF2F7', paddingTop: '20px' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Source Links</div>
+                    <div style={{ marginTop: '24px', borderTop: '1px solid #EDF2F7', paddingTop: '16px' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#718096', marginBottom: '8px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Source Links</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {news.chunks.map((chunk, i) => {
                                 if (chunk.web?.uri) {
                                     return (
                                         <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" 
-                                           style={{ fontSize: '0.8rem', color: '#006B76', textDecoration: 'none', background: '#E6FFFA', padding: '6px 12px', borderRadius: '6px', border: '1px solid #B2F5EA', transition: 'all 0.2s', fontWeight: '500' }}>
+                                           style={{ fontSize: '0.75rem', color: '#006B76', textDecoration: 'none', background: '#E6FFFA', padding: '4px 10px', borderRadius: '4px', border: '1px solid #B2F5EA', transition: 'all 0.2s', fontWeight: '500' }}>
                                             {chunk.web.title || 'Source ' + (i + 1)} ↗
                                         </a>
                                     );
@@ -613,17 +655,17 @@ const IndustryNewsSection = () => {
 
 const ActionItems = ({ actions }) => (
   <div className="card">
-    <h3 style={{ color: '#E53E3E', borderBottomColor: '#FED7D7' }}>🎯 CRITICAL ACTION ITEMS</h3>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <h3 style={{ color: '#006B76', borderBottomColor: '#B2F5EA' }}>🚀 PRIORITY ACTIONS</h3>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {actions.map((action, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: i < actions.length -1 ? '20px' : 0, borderBottom: i < actions.length -1 ? '1px dashed #E2E8F0' : 'none' }}>
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < actions.length - 1 ? '1px solid #EDF2F7' : 'none', paddingBottom: i < actions.length - 1 ? '12px' : '0' }}>
           <div>
-            <div style={{ fontWeight: '700', color: '#2D3748', fontSize: '1rem' }}>{action.title}</div>
-            <div style={{ fontSize: '0.9rem', color: '#718096', marginTop: '4px' }}>{action.desc}</div>
+            <div style={{ fontWeight: '700', color: '#2D3748' }}>{action.title}</div>
+            <div style={{ fontSize: '0.85rem', color: '#718096' }}>{action.desc}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-             <div style={{ fontSize: '0.7rem', color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Impact</div>
-             <div style={{ fontWeight: '800', color: '#38A169', fontSize: '1.2rem' }}>{action.impact}</div>
+             <div style={{ fontWeight: '800', color: '#006B76', fontSize: '1.1rem' }}>{action.impact}</div>
+             <div style={{ fontSize: '0.7rem', color: '#A0AEC0', textTransform: 'uppercase' }}>Est. Impact</div>
           </div>
         </div>
       ))}
@@ -631,389 +673,478 @@ const ActionItems = ({ actions }) => (
   </div>
 );
 
-// State-of-the-Art Glowing Trend Chart
-const TrendChart = ({ data, target }) => {
-  const max = 80; const min = 50; const range = max - min;
-  const points = data.map((val, i) => {
-    const x = (i / (data.length - 1)) * 100;
-    const y = 100 - ((val - min) / range) * 100;
-    return `${x},${y}`;
-  }).join(' ');
-  const targetY = 100 - ((target - min) / range) * 100;
-
+const TabPulse = ({ data, onHomeClick }) => {
   return (
-    <div style={{ height: '240px', width: '100%', position: 'relative' }}>
-      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{overflow: 'visible'}}>
-        <defs>
-          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-          <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#006B76" stopOpacity="0.4"/>
-            <stop offset="100%" stopColor="#006B76" stopOpacity="0"/>
-          </linearGradient>
-        </defs>
-        
-        {/* Grid lines */}
-        {[0, 25, 50, 75, 100].map(y => <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#EDF2F7" strokeWidth="0.5" />)}
-        
-        {/* Target Band */}
-        <rect x="0" y="0" width="100" height={targetY} fill="#F0FFF4" opacity="0.5" />
-        <line x1="0" y1={targetY} x2="100" y2={targetY} stroke="#48BB78" strokeWidth="1" strokeDasharray="4,4" />
-        
-        {/* Area Fill */}
-        <polygon points={`0,100 ${points} 100,100`} fill="url(#chartGradient)" />
+    <div className="tab-content fade-in">
+      <DmoImpactPanel data={data} />
+      
+      <div style={{ marginTop: '24px' }}>
+        <HeadlineInsight headline={data.pulse.headline} />
+      </div>
 
-        {/* Main Line with Glow */}
-        <polyline points={points} fill="none" stroke="#006B76" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" style={{filter: 'drop-shadow(0 0 3px rgba(0,107,118,0.5))'}} />
-        
-        {/* Animated Data Points */}
-        {data.map((val, i) => {
-           const x = (i / (data.length - 1)) * 100;
-           const y = 100 - ((val - min) / range) * 100;
-           return (
-             <g key={i} className="chart-point">
-               <circle cx={x} cy={y} r="3" fill="white" stroke="#006B76" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-               <circle cx={x} cy={y} r="10" fill="transparent" stroke="none" style={{cursor:'pointer'}}>
-                  <title>{val}%</title>
-               </circle>
-             </g>
-           )
-        })}
-      </svg>
-      <div style={{ position: 'absolute', top: `${targetY}%`, right: '0', transform: 'translateY(-120%)', fontSize: '0.75rem', color: '#48BB78', fontWeight: 'bold', background: 'rgba(240, 255, 244, 0.9)', padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>Target {target}%</div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
+        gap: '24px', 
+        marginTop: '24px' 
+      }}>
+        {data.pulse.kpis.map((kpi, i) => (
+          <KPICard key={i} data={kpi} />
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginTop: '24px' }}>
+         <IndustryNewsSection />
+         <ActionItems actions={data.pulse.actions} />
+      </div>
     </div>
   );
 };
 
-const BenchmarkChart = ({ items }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-    {items.map((item, i) => (
-      <div key={i}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', marginBottom: '8px' }}>
-          <span style={{ fontWeight: item.name === 'Visit Dana Point' ? '700' : '500', color: item.name === 'Visit Dana Point' ? '#006B76' : '#4A5568' }}>{item.name}</span>
-          <span style={{ fontWeight: '700', color: '#2D3748' }}>{item.label}</span>
-        </div>
-        <div style={{ height: '20px', background: '#EDF2F7', borderRadius: '10px', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ width: `${(item.value / 150) * 100}%`, height: '100%', background: item.color, borderRadius: '10px', boxShadow: '2px 0 5px rgba(0,0,0,0.1)' }} />
-          {item.name === 'Orange County Avg' && (
-            <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${(100/150)*100}%`, borderLeft: '2px dashed #718096', zIndex: 2 }} />
-          )}
-        </div>
-      </div>
-    ))}
-    <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#718096', marginTop: '12px' }}>100 = Market Average (Orange County)</div>
-  </div>
-);
+// --- VISUALIZATIONS ---
+const SmoothTrendChart = ({ data, target }) => {
+    // Generate smooth bezier curve path
+    const max = 80; const min = 50; const range = max - min;
+    const points = data.map((val, i) => {
+        const x = (i / (data.length - 1)) * 100;
+        const y = 100 - ((val - min) / range) * 100;
+        return {x, y, val};
+    });
 
-const ScenarioSlider = ({ data }) => {
-  const [conversion, setConversion] = useState(0);
-  const baseSpend = data.economics.spend; 
-  
-  // Vetted calc: ~2.95M gain per 1% conversion based on $29.5M for 10%
-  const gainPer1Pct = 2.95; 
-  const currentGain = conversion * gainPer1Pct;
-  const total = baseSpend + currentGain;
-
-  return (
-    <div style={{ padding: '24px', background: 'linear-gradient(to bottom right, #FFFFFF, #F7FAFC)', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.01)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '28px' }}>
-        <div>
-          <h4 style={{ margin: '0 0 4px 0', color: '#2D3748', fontSize: '1.1rem' }}>
-            Day-Tripper Conversion Model (Vetted)
-            <Tooltip text={TOOLTIPS.DAY_TRIPPER} />
-          </h4>
-          <div style={{ fontSize: '0.9rem', color: '#718096' }}>Current: 85.6% Day / 14.4% Overnight</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '0.8rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Est. New Spending</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#38A169' }}>+${currentGain.toFixed(1)}M</div>
-        </div>
-      </div>
-      
-      <input 
-        type="range" min="0" max="20" step="5" 
-        value={conversion} onChange={(e) => setConversion(parseInt(e.target.value))}
-        style={{ marginBottom: '16px' }} 
-      />
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#4A5568', fontWeight: '600' }}>
-        <span>Current (0%)</span>
-        <span>5%</span>
-        <span>Target (10%)</span>
-        <span>15%</span>
-        <span>Max (20%)</span>
-      </div>
-
-      <div style={{ marginTop: '24px', padding: '16px', background: '#E6FFFA', borderRadius: '8px', borderLeft: '4px solid #38A169' }}>
-        <p style={{ margin: 0, fontSize: '0.9rem', color: '#234E52', lineHeight: '1.5' }}>
-          <strong>Vetted Insight:</strong> Converting <strong>{conversion || '10'}%</strong> of day-trippers to overnight guests could generate <strong>${conversion ? currentGain.toFixed(1) : '29.5'}M</strong> in new revenue. This is a conservative estimate based on current ADR.
-        </p>
-      </div>
-      <div className="source-label" style={{textAlign: 'right', marginTop: '8px'}}>Source: Datafy + Economic Impact Model</div>
-    </div>
-  );
-};
-
-const HeatMap = ({ data }) => {
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  return (
-    <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(30px, 1fr))', gap: '6px' }}>
-        {data.map((val, i) => {
-          const intensity = (val - min) / (max - min);
-          let bg = intensity < 0.3 ? '#FEFCBF' : intensity < 0.7 ? '#FBD38D' : '#F6AD55'; 
-          return (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-               <div style={{ width: '100%', height: '48px', background: bg, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '700', color: '#2D3748', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: 'transform 0.2s' }} className="heatmap-cell">
-                  ${val.toFixed(1)}
-                </div>
-               <span style={{ fontSize: '0.7rem', color: '#718096' }}>{months[i]}</span>
-            </div>
-          )
-        })}
-      </div>
-      <div className="source-label" style={{textAlign: 'right', marginTop: '8px'}}>Source: Datafy</div>
-    </div>
-  )
-};
-
-const FunnelChart = ({ stages }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-    {stages.map((stage, i) => (
-      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{ width: '130px', fontSize: '0.85rem', fontWeight: stage.alert ? '700' : '500', color: stage.alert ? '#E53E3E' : '#2D3748' }}>
-          {stage.stage} {stage.alert && '⚠️'}
-        </div>
-        <div style={{ flex: 1, height: '32px', background: '#EDF2F7', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
-          <div style={{ 
-            width: parseFloat(stage.rate) < 2 ? '5px' : `${parseFloat(stage.rate)}%`, 
-            height: '100%', 
-            background: stage.alert ? '#E53E3E' : '#006B76',
-            opacity: 1 - (i * 0.1),
-            boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.1)'
-          }} />
-          <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: '#4A5568' }}>{stage.note}</div>
-        </div>
-        <div style={{ width: '80px', textAlign: 'right', fontWeight: 'bold' }}>{stage.count.toLocaleString()}</div>
-        <div style={{ width: '50px', textAlign: 'right', fontSize: '0.85rem', color: '#718096' }}>{stage.rate}</div>
-        {stage.tooltip && <Tooltip text={stage.tooltip} />}
-      </div>
-    ))}
-    <div className="source-label" style={{textAlign: 'right'}}>Source: GA4</div>
-  </div>
-);
-
-const BubbleChart = ({ data }) => {
-  // X: Volume (0-200k), Y: Engagement (60-80), Z: Size
-  return (
-    <div style={{ height: '240px', position: 'relative', borderLeft: '1px solid #CBD5E0', borderBottom: '1px solid #CBD5E0', margin: '20px 0 20px 20px' }}>
-      {data.map((d, i) => {
-        const left = (d.x / 180) * 100; // max volume approx 180k
-        const bottom = ((d.y - 65) / 15) * 100; // engagement 65-80
-        const size = Math.max(30, d.z * 1.5); 
-        return (
-          <div key={i} style={{ 
-            position: 'absolute', left: `${left}%`, bottom: `${bottom}%`, 
-            width: size, height: size, borderRadius: '50%', background: d.color, opacity: 0.8,
-            transform: 'translate(-50%, 50%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 10px rgba(0,0,0,0.2)', color: 'white', fontSize: '0.65rem', textAlign: 'center', fontWeight: '600',
-            border: '2px solid rgba(255,255,255,0.8)', backdropFilter: 'blur(2px)'
-          }} title={`${d.name}: ${d.x}k sessions`}>
-            {size > 30 && d.name.split(' ')[0]}
-          </div>
-        )
-      })}
-      <div style={{ position: 'absolute', bottom: '-30px', width: '100%', textAlign: 'center', fontSize: '0.75rem', color: '#718096' }}>Volume (Sessions) →</div>
-      <div style={{ position: 'absolute', left: '-35px', bottom: '0', width: '200px', transform: 'rotate(-90deg)', transformOrigin: '0 100%', textAlign: 'center', fontSize: '0.75rem', color: '#718096' }}>Engagement Rate % →</div>
-      <div className="source-label" style={{position: 'absolute', bottom: '-45px', right: 0}}>Source: GA4</div>
-    </div>
-  )
-};
-
-// --- DATA UPLOAD TAB ---
-const DataUploadTab = ({ currentData, onUpdate }) => {
-  const fileInputRef = useRef(null);
-
-  const downloadTemplate = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "vdp_data_template.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const result = event.target?.result;
-        if (typeof result === 'string') {
-            const json = JSON.parse(result);
-            onUpdate(json);
-            alert("Data successfully updated!");
+    // Simple smooth curve generator
+    const generatePath = (pts) => {
+        let path = `M ${pts[0].x} ${pts[0].y}`;
+        for (let i = 0; i < pts.length - 1; i++) {
+            const curr = pts[i];
+            const next = pts[i + 1];
+            // Control points for bezier (simple smoothing)
+            const cp1x = curr.x + (next.x - curr.x) / 2;
+            const cp1y = curr.y;
+            const cp2x = curr.x + (next.x - curr.x) / 2;
+            const cp2y = next.y;
+            path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
         }
-      } catch (err) {
-        console.error("Error parsing JSON:", err);
-        alert("Error parsing JSON file. Please ensure it matches the template format.");
-      }
+        return path;
     };
-    reader.readAsText(file);
+
+    const linePath = generatePath(points);
+    const areaPath = `${linePath} L 100 100 L 0 100 Z`;
+    const targetY = 100 - ((target - min) / range) * 100;
+
+    return (
+        <div style={{ height: '240px', width: '100%', position: 'relative' }}>
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{overflow: 'visible'}}>
+                <defs>
+                    <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#006B76" stopOpacity="0.5"/>
+                        <stop offset="100%" stopColor="#006B76" stopOpacity="0"/>
+                    </linearGradient>
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="1.5" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                </defs>
+                
+                {/* Grid */}
+                {[0, 25, 50, 75, 100].map(y => <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#E2E8F0" strokeWidth="0.5" />)}
+                
+                {/* Target Line */}
+                <line x1="0" y1={targetY} x2="100" y2={targetY} stroke="#48BB78" strokeWidth="1" strokeDasharray="4,4" />
+                
+                {/* Area & Line */}
+                <path d={areaPath} fill="url(#chartGradient)" />
+                <path d={linePath} fill="none" stroke="#006B76" strokeWidth="2.5" strokeLinecap="round" filter="url(#glow)" />
+                
+                {/* Points */}
+                {points.map((p, i) => (
+                    <g key={i}>
+                         <circle cx={p.x} cy={p.y} r="2" fill="white" stroke="#006B76" strokeWidth="1.5" />
+                    </g>
+                ))}
+            </svg>
+            <div style={{ position: 'absolute', top: `${targetY}%`, right: '0', transform: 'translateY(-140%)', fontSize: '0.7rem', color: '#48BB78', fontWeight: 'bold', background: '#F0FFF4', padding: '2px 6px', borderRadius: '4px', border: '1px solid #C6F6D5' }}>Target {target}%</div>
+        </div>
+    );
+};
+
+const TabHospitality = ({ data }) => {
+    const h = data.hospitality;
+    return (
+        <div className="tab-content fade-in">
+             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '16px'}}>
+                <h2 style={{fontSize: '1.5rem', margin:0, color: '#1A365D'}}>Hospitality Performance</h2>
+                <ExportMenu title="Hospitality Report" data={h} />
+             </div>
+            <div className="grid-2">
+                <div className="card">
+                    <h3>Occupancy Trend (2024)</h3>
+                    <SmoothTrendChart data={h.occupancyTrend} target={70} />
+                </div>
+                <div className="card">
+                    <h3>RevPAR Benchmarks</h3>
+                     <div style={{display: 'flex', flexDirection: 'column', gap: '20px', paddingTop: '10px'}}>
+                        {h.benchmarks.map((b, i) => (
+                            <div key={i}>
+                                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px'}}>
+                                    <span style={{fontWeight: '600', color: '#2D3748'}}>{b.name}</span>
+                                    <span style={{color: '#718096'}}>{b.label}</span>
+                                </div>
+                                <div style={{height: '16px', background: '#EDF2F7', borderRadius: '8px', overflow: 'hidden', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'}}>
+                                    <div style={{width: `${(b.value/150)*100}%`, background: b.color, height: '100%', borderRadius: '0 8px 8px 0', transition: 'width 1s ease-out'}}></div>
+                                </div>
+                            </div>
+                        ))}
+                     </div>
+                </div>
+            </div>
+             <div className="card" style={{marginTop: '24px'}}>
+                <h3>Property Class Performance</h3>
+                <div style={{overflowX: 'auto'}}>
+                <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem'}}>
+                    <thead>
+                        <tr style={{borderBottom: '2px solid #EDF2F7', textAlign: 'left'}}>
+                            <th style={{padding: '16px', color: '#718096'}}>Class</th>
+                            <th style={{padding: '16px', color: '#718096'}}>Occupancy</th>
+                            <th style={{padding: '16px', color: '#718096'}}>ADR</th>
+                            <th style={{padding: '16px', color: '#718096'}}>RevPAR</th>
+                            <th style={{padding: '16px', color: '#718096'}}>YoY Growth</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {h.propertyClass.map((p, i) => (
+                            <tr key={i} style={{borderBottom: '1px solid #EDF2F7'}}>
+                                <td style={{padding: '16px', fontWeight: '600', color: '#2D3748'}}>{p.name}</td>
+                                <td style={{padding: '16px'}}>{p.occ}</td>
+                                <td style={{padding: '16px'}}>{p.adr}</td>
+                                <td style={{padding: '16px'}}>{p.revpar}</td>
+                                <td style={{padding: '16px', fontWeight: 'bold', color: p.growth.includes('+') ? '#38A169' : '#E53E3E'}}>{p.growth}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const TabEconomics = ({ data }) => {
+    const e = data.economics;
+    return (
+        <div className="tab-content fade-in">
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '16px'}}>
+                <h2 style={{fontSize: '1.5rem', margin:0, color: '#1A365D'}}>Economic Impact</h2>
+                <ExportMenu title="Economic Report" data={e} />
+            </div>
+            <div className="card">
+                <h3>Visitor Spend Distribution</h3>
+                 <div style={{display: 'flex', gap: '4px', height: '36px', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)'}}>
+                    {e.categories.map((c, i) => (
+                        <div key={i} style={{width: `${c.pct}%`, background: ['#3182CE', '#38A169', '#D69E2E', '#805AD5'][i], position: 'relative'}} title={`${c.name}: ${c.pct}%`}></div>
+                    ))}
+                </div>
+                <div className="grid-2">
+                    {e.categories.map((c, i) => (
+                        <div key={i} style={{display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', background: '#F7FAFC', borderRadius: '8px'}}>
+                            <div style={{width: '16px', height: '16px', borderRadius: '4px', background: ['#3182CE', '#38A169', '#D69E2E', '#805AD5'][i]}}></div>
+                            <div style={{flex: 1}}>
+                                <div style={{fontWeight: '700', fontSize: '0.95rem', color: '#2D3748'}}>{c.name}</div>
+                                <div style={{color: '#718096', fontSize: '0.85rem'}}>${c.val}M ({c.pct}%)</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+             <div className="card" style={{marginTop: '24px'}}>
+                <h3>Conversion Scenarios (Day-Tripper to Overnight)</h3>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px'}}>
+                    {e.scenarios.map((s, i) => (
+                        <div key={i} style={{padding: '24px', background: i === 0 ? 'white' : '#F0FFF4', borderRadius: '16px', border: i === 0 ? '1px solid #E2E8F0' : '1px solid #C6F6D5', boxShadow: '0 4px 6px rgba(0,0,0,0.02)'}}>
+                            <div style={{fontWeight: '700', fontSize: '0.9rem', marginBottom: '8px', color: '#718096', textTransform: 'uppercase'}}>{s.label}</div>
+                            <div style={{fontSize: '2rem', fontWeight: '800', color: '#1A365D'}}>${s.spend}M</div>
+                            {s.gain > 0 && <div style={{fontSize: '0.9rem', color: '#38A169', fontWeight: '700', marginTop: '4px'}}>+${s.gain}M Impact</div>}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const TabGrowth = ({ data }) => {
+    const g = data.growth;
+    return (
+        <div className="tab-content fade-in">
+             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '16px'}}>
+                <h2 style={{fontSize: '1.5rem', margin:0, color: '#1A365D'}}>Visitor Origins</h2>
+                <ExportMenu title="Growth Report" data={g} />
+            </div>
+             <div className="grid-2">
+                 <div className="card">
+                    <h3>Key Source Markets</h3>
+                    {g.markets.map((m, i) => (
+                        <div key={i} style={{marginBottom: '20px'}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}>
+                                <span style={{fontWeight: '700', color: '#2D3748'}}>{m.name}</span>
+                                <span style={{color: '#38A169', fontSize: '0.85rem', fontWeight: '600'}}>{m.growth}</span>
+                            </div>
+                            <div style={{height: '10px', background: '#EDF2F7', borderRadius: '5px', overflow: 'hidden'}}>
+                                <div style={{width: `${m.share * 2}%`, background: 'linear-gradient(90deg, #4299E1, #3182CE)', height: '100%', borderRadius: '5px'}}></div>
+                            </div>
+                            <div style={{textAlign: 'right', fontSize: '0.75rem', color: '#718096', marginTop: '4px'}}>{m.val} visitors</div>
+                        </div>
+                    ))}
+                 </div>
+                 <div className="card">
+                     <h3>Demographic Profile</h3>
+                     <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+                         {g.demographics.map((d, i) => (
+                             <div key={i} style={{padding: '20px', background: '#F7FAFC', borderRadius: '16px', textAlign: 'center', border: '1px solid #EDF2F7'}}>
+                                 <div style={{fontSize: '1.8rem', fontWeight: '800', color: '#1A365D'}}>{d.value}</div>
+                                 <div style={{fontSize: '0.85rem', color: '#718096', fontWeight: '500'}}>{d.label}</div>
+                             </div>
+                         ))}
+                     </div>
+                 </div>
+             </div>
+        </div>
+    );
+};
+
+const TabDigital = ({ data }) => {
+    const d = data.digital;
+    return (
+        <div className="tab-content fade-in">
+             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '16px'}}>
+                <h2 style={{fontSize: '1.5rem', margin:0, color: '#1A365D'}}>Digital Intelligence</h2>
+                <ExportMenu title="Digital Report" data={d} />
+            </div>
+            <div className="card">
+                <h3>Website Conversion Funnel</h3>
+                {d.funnel.map((step, i) => (
+                     <div key={i} style={{display: 'flex', alignItems: 'center', marginBottom: '16px', opacity: 1 - i*0.1}}>
+                        <div style={{width: '140px', fontWeight: '600', fontSize: '0.9rem', color: '#2D3748'}}>{step.stage}</div>
+                        <div style={{flex: 1, background: '#EDF2F7', height: '32px', margin: '0 16px', borderRadius: '6px', position: 'relative', overflow: 'hidden'}}>
+                            <div style={{width: step.rate, background: step.alert ? '#E53E3E' : '#006B76', height: '100%', borderRadius: '6px', transition: 'width 1s'}}></div>
+                        </div>
+                        <div style={{width: '100px', textAlign: 'right', fontWeight: '700', fontSize: '1rem'}}>{step.count.toLocaleString()}</div>
+                     </div>
+                ))}
+            </div>
+            <div className="grid-2" style={{marginTop: '24px'}}>
+                <div className="card">
+                     <h3>Top Pages</h3>
+                     <ul style={{listStyle: 'none', padding: 0}}>
+                         {d.pages.map((p, i) => (
+                             <li key={i} style={{padding: '12px 0', borderBottom: '1px solid #EDF2F7', display: 'flex', justifyContent: 'space-between', color: p.alert ? '#E53E3E' : 'inherit'}}>
+                                 <span style={{fontWeight: '500'}}>{p.name}</span>
+                                 <span style={{background: '#F7FAFC', padding: '2px 8px', borderRadius: '4px', fontSize: '0.85rem'}}>{p.views.toLocaleString()}</span>
+                             </li>
+                         ))}
+                     </ul>
+                </div>
+                 <div className="card">
+                     <h3>Sentiment Analysis</h3>
+                     {d.sentiment.map((s, i) => (
+                         <div key={i} style={{marginBottom: '16px'}}>
+                             <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '4px'}}>
+                                 <span style={{fontWeight: '600'}}>{s.cat}</span>
+                                 <span style={{color: '#38A169', fontWeight: 'bold'}}>{s.pos}% Pos</span>
+                             </div>
+                             <div style={{height: '8px', background: '#FED7D7', borderRadius: '4px', overflow: 'hidden'}}>
+                                 <div style={{width: `${s.pos}%`, background: '#38A169', height: '100%', borderRadius: '4px'}}></div>
+                             </div>
+                         </div>
+                     ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const TabEvents = ({ data }) => {
+    const e = data.events;
+    return (
+        <div className="tab-content fade-in">
+             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '16px'}}>
+                <h2 style={{fontSize: '1.5rem', margin:0, color: '#1A365D'}}>Event Strategy</h2>
+                <ExportMenu title="Events Report" data={e} />
+            </div>
+            <div className="card">
+                <h3>Signature Event: Ohana Festival Impact</h3>
+                <div style={{display: 'flex', alignItems: 'flex-end', gap: '24px', height: '240px', marginTop: '24px', paddingBottom: '20px'}}>
+                    {e.ohana.map((o, i) => (
+                        <div key={i} style={{flex: 1, textAlign: 'center'}}>
+                            <div style={{height: `${(o.spend/220)*100}%`, background: 'linear-gradient(180deg, #9F7AEA, #805AD5)', borderRadius: '8px 8px 0 0', position: 'relative', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}>
+                                <span style={{position: 'absolute', top: '-25px', width: '100%', left: 0, fontSize: '0.85rem', fontWeight: '800', color: '#553C9A'}}>${o.spend}M</span>
+                            </div>
+                            <div style={{marginTop: '12px', fontSize: '0.9rem', fontWeight: '700', color: '#2D3748'}}>{o.year}</div>
+                            <div style={{fontSize: '0.8rem', color: '#718096'}}>{o.att}k Attn</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+             <div className="card" style={{marginTop: '24px'}}>
+                 <h3>Seasonality & Gap Analysis</h3>
+                 <p style={{fontSize: '0.9rem', color: '#718096'}}>Identifying low-season opportunities for new event development.</p>
+                 <div style={{display: 'flex', gap: '6px', height: '180px', alignItems: 'flex-end', marginTop: '24px'}}>
+                     {e.seasonality.map((val, i) => (
+                         <div key={i} style={{flex: 1, background: val < 5 ? '#FC8181' : '#63B3ED', height: `${(val/8)*100}%`, borderRadius: '4px', position: 'relative', opacity: 0.9}} title={`Month ${i+1}: $${val}M`}>
+                         </div>
+                     ))}
+                 </div>
+                 <div style={{marginTop: '16px', display: 'flex', gap: '24px', fontSize: '0.85rem'}}>
+                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}><div style={{width: '12px', height: '12px', background: '#FC8181', borderRadius: '2px'}}></div> Need Period</div>
+                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}><div style={{width: '12px', height: '12px', background: '#63B3ED', borderRadius: '2px'}}></div> Peak Season</div>
+                 </div>
+             </div>
+        </div>
+    );
+};
+
+const TabStrategic = ({ data }) => {
+    const s = data.strategic;
+    return (
+        <div className="tab-content fade-in">
+             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: '16px'}}>
+                <h2 style={{fontSize: '1.5rem', margin:0, color: '#1A365D'}}>2026 Strategy</h2>
+                <ExportMenu title="Strategy Scorecard" data={s} />
+            </div>
+             <div className="card">
+                 <h3>Strategic Scorecard</h3>
+                 <div style={{overflowX: 'auto'}}>
+                     <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                         <thead>
+                             <tr style={{textAlign: 'left', borderBottom: '2px solid #EDF2F7'}}>
+                                 <th style={{padding: '16px', color: '#718096'}}>Metric</th>
+                                 <th style={{padding: '16px', color: '#718096'}}>Current</th>
+                                 <th style={{padding: '16px', color: '#718096'}}>2026 Target</th>
+                                 <th style={{padding: '16px', color: '#718096'}}>Status</th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                             {s.scorecard.map((row, i) => (
+                                 <tr key={i} style={{borderBottom: '1px solid #EDF2F7'}}>
+                                     <td style={{padding: '16px', fontWeight: '600', color: '#2D3748'}}>{row.name}</td>
+                                     <td style={{padding: '16px'}}>{row.current}</td>
+                                     <td style={{padding: '16px'}}>{row.target}</td>
+                                     <td style={{padding: '16px'}}>
+                                         <span style={{
+                                             padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold',
+                                             background: row.status === 'green' ? '#C6F6D5' : row.status === 'yellow' ? '#FEFCBF' : '#FED7D7',
+                                             color: row.status === 'green' ? '#22543D' : row.status === 'yellow' ? '#744210' : '#822727'
+                                         }}>
+                                             {row.status.toUpperCase()}
+                                         </span>
+                                     </td>
+                                 </tr>
+                             ))}
+                         </tbody>
+                     </table>
+                 </div>
+             </div>
+             <div className="card" style={{marginTop: '24px'}}>
+                 <h3>Strategic Initiatives</h3>
+                 <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
+                     {s.initiatives.map((init, i) => (
+                         <div key={i} style={{padding: '24px', border: '1px solid #E2E8F0', borderRadius: '12px', background: '#F7FAFC'}}>
+                             <div style={{fontWeight: '700', color: '#1A365D', marginBottom: '8px', fontSize: '1.05rem'}}>{init.name}</div>
+                             <div style={{fontSize: '0.9rem', color: '#718096', marginBottom: '4px'}}>Owner: {init.owner}</div>
+                             <div style={{fontSize: '0.9rem', color: '#006B76', fontWeight: '700'}}>ROI: {init.roi}</div>
+                         </div>
+                     ))}
+                 </div>
+             </div>
+        </div>
+    );
+};
+
+const AIAnalystTab = () => {
+  const [query, setQuery] = useState('');
+  const [response, setResponse] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleAsk = async () => {
+    if (!query.trim()) return;
+    setLoading(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: query,
+        config: {
+            systemInstruction: "You are an expert Data Analyst for Visit Dana Point. Answer questions based on tourism data.",
+        }
+      });
+      setResponse(result.text);
+    } catch (e) {
+      setResponse("Error analyzing data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="tab-content fade-in">
-      <div className="card">
-        <h3 style={{ color: '#006B76' }}>Data Management Center</h3>
-        <p style={{ fontSize: '1rem', color: '#4A5568', marginBottom: '24px' }}>
-          This dashboard is powered by verified data from STR, Datafy, and GA4. Use this section to update the dataset.
-          The file uploaded here acts as the single source of truth for the entire application.
-        </p>
-
-        <div className="grid-2">
-           <div style={{ padding: '32px', border: '2px dashed #CBD5E0', borderRadius: '16px', textAlign: 'center', background: '#F7FAFC' }}>
-              <div style={{ color: '#006B76', marginBottom: '16px' }}><Icons.Download /></div>
-              <h4 style={{ margin: '0 0 8px 0', color: '#2D3748' }}>Step 1: Get Template</h4>
-              <p style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '24px' }}>Download the current data structure as a JSON file.</p>
-              <button onClick={downloadTemplate} className="cta-button" style={{ background: 'white', color: '#006B76', border: '1px solid #006B76', boxShadow: 'none' }}>
-                Download JSON Template
-              </button>
-           </div>
-
-           <div style={{ padding: '32px', border: '2px dashed #006B76', borderRadius: '16px', textAlign: 'center', background: '#F0FFF4' }}>
-              <div style={{ color: '#006B76', marginBottom: '16px' }}><Icons.Upload /></div>
-              <h4 style={{ margin: '0 0 8px 0', color: '#2D3748' }}>Step 2: Upload Data</h4>
-              <p style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '24px' }}>Upload your updated JSON file to populate the dashboard.</p>
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept=".json"
-                style={{ display: 'none' }}
-              />
-              <button onClick={() => fileInputRef.current?.click()} className="cta-button">
-                Select & Upload JSON
-              </button>
-           </div>
+        <div className="card">
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px'}}>
+                <h3 style={{margin:0}}>🤖 AI Strategic Analyst</h3>
+                {response && <ExportMenu title="AI Analysis" data={{query, response}} />}
+            </div>
+            
+            <div style={{display:'flex', gap: '10px'}}>
+                <input 
+                    value={query} 
+                    onChange={(e) => setQuery(e.target.value)} 
+                    placeholder="Ask about occupancy trends, visitor spending, or marketing ROI..."
+                    style={{flex:1, padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E0'}}
+                />
+                <button onClick={handleAsk} disabled={loading} className="cta-button">
+                    {loading ? 'Analyzing...' : 'Ask Analyst'}
+                </button>
+            </div>
+            {response && (
+                <div style={{marginTop: '20px', padding: '24px', background: '#F7FAFC', borderRadius: '12px', lineHeight: '1.7', border: '1px solid #E2E8F0'}}>
+                    <div style={{fontWeight: 'bold', marginBottom: '12px', color: '#006B76', fontSize: '1.1rem'}}>Analyst Insight:</div>
+                    <div style={{color: '#2D3748'}}>{parseBold(response)}</div>
+                </div>
+            )}
         </div>
-
-        <div style={{ marginTop: '32px', padding: '16px', background: '#FFF5F5', borderRadius: '8px', borderLeft: '4px solid #C53030' }}>
-           <strong style={{ color: '#C53030' }}>Warning:</strong> Uploading new data will instantly override all metrics, charts, and text in the dashboard for this session. Ensure your JSON is validated.
-        </div>
-      </div>
     </div>
   );
 };
 
-// --- CREATIVE STUDIO (IMAGE GEN, EDIT, VIDEO) ---
 const CreativeStudio = () => {
-    const [mode, setMode] = useState('generate'); // generate, edit, video
     const [prompt, setPrompt] = useState('');
-    const [aspectRatio, setAspectRatio] = useState('1:1');
-    const [imageSize, setImageSize] = useState('1K');
+    const [image, setImage] = useState('');
     const [loading, setLoading] = useState(false);
-    const [resultUrl, setResultUrl] = useState(null);
-    const [uploadImage, setUploadImage] = useState(null); // base64 string
-    const [uploadPreview, setUploadPreview] = useState(null);
-    const fileRef = useRef(null);
 
-    // Helpers
-    const handleFile = (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const base64Raw = evt.target?.result;
-            // Fix: Check if base64Raw is a string before splitting, as FileReader result can be ArrayBuffer
-            if (typeof base64Raw === 'string') {
-                setUploadPreview(base64Raw);
-                // strip header for API
-                const base64Data = base64Raw.split(',')[1];
-                const mimeType = base64Raw.split(';')[0].split(':')[1];
-                setUploadImage({ data: base64Data, mimeType });
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    // Actions
     const handleGenerate = async () => {
         if (!prompt) return;
         setLoading(true);
-        setResultUrl(null);
+        setImage('');
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: {
+                    parts: [{ text: prompt }]
+                },
+                config: {
+                    imageConfig: {
+                         aspectRatio: "16:9",
+                    }
+                }
+            });
             
-            if (mode === 'generate') {
-                // Nano Banana Pro
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3-pro-image-preview',
-                    contents: { parts: [{ text: prompt }] },
-                    config: { imageConfig: { aspectRatio, imageSize } }
-                });
-                for (const part of response.candidates[0].content.parts) {
-                    if (part.inlineData) {
-                        setResultUrl(`data:image/png;base64,${part.inlineData.data}`);
-                        break;
-                    }
-                }
-            } 
-            else if (mode === 'edit') {
-                if (!uploadImage) { alert("Upload an image first"); return; }
-                // Nano Banana (Gemini 2.5 Flash Image)
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash-image',
-                    contents: {
-                        parts: [
-                            { inlineData: uploadImage },
-                            { text: prompt }
-                        ]
-                    }
-                });
-                for (const part of response.candidates[0].content.parts) {
-                    if (part.inlineData) {
-                        setResultUrl(`data:image/png;base64,${part.inlineData.data}`);
-                        break;
-                    }
+             for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    setImage(`data:image/png;base64,${part.inlineData.data}`);
                 }
             }
-            else if (mode === 'video') {
-                // Veo
-                let operation = await ai.models.generateVideos({
-                    model: 'veo-3.1-fast-generate-preview',
-                    prompt: prompt,
-                    image: uploadImage ? { imageBytes: uploadImage.data, mimeType: uploadImage.mimeType } : undefined,
-                    config: {
-                        numberOfVideos: 1,
-                        resolution: '720p',
-                        aspectRatio: aspectRatio === '1:1' ? '16:9' : aspectRatio // Veo only 16:9 or 9:16
-                    }
-                });
-                // Poll
-                while (!operation.done) {
-                    await new Promise(r => setTimeout(r, 5000));
-                    operation = await ai.operations.getVideosOperation({operation});
-                }
-                const vidUri = operation.response?.generatedVideos?.[0]?.video?.uri;
-                if (vidUri) {
-                    // Fetch with API key appended
-                    const vidRes = await fetch(`${vidUri}&key=${process.env.API_KEY}`);
-                    const blob = await vidRes.blob();
-                    setResultUrl(URL.createObjectURL(blob));
-                }
-            }
-
         } catch (e) {
             console.error(e);
-            alert("Generation failed: " + e.message);
+            alert("Error generating image");
         } finally {
             setLoading(false);
         }
@@ -1022,667 +1153,88 @@ const CreativeStudio = () => {
     return (
         <div className="tab-content fade-in">
             <div className="card">
-                <div style={{marginBottom: '24px', borderBottom: '1px solid #EDF2F7', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between'}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px'}}>
                     <div>
-                        <h3 style={{margin:0, color:'#1A365D'}}>Creative Studio</h3>
-                        <p style={{margin:'4px 0 0 0', color:'#718096'}}>Powered by Nano Banana Pro & Veo</p>
+                        <h3 style={{margin:0}}>🎨 Marketing Creative Studio</h3>
+                        <p style={{margin: '4px 0 0', color: '#718096'}}>Generate concept art for campaigns.</p>
                     </div>
-                    <div style={{display: 'flex', gap: '8px'}}>
-                        {['generate', 'edit', 'video'].map(m => (
-                            <button 
-                                key={m}
-                                onClick={() => {setMode(m); setResultUrl(null);}}
-                                style={{
-                                    padding: '8px 16px',
-                                    borderRadius: '20px',
-                                    border: 'none',
-                                    background: mode === m ? '#006B76' : '#EDF2F7',
-                                    color: mode === m ? 'white' : '#4A5568',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    textTransform: 'capitalize'
-                                }}
-                            >
-                                {m}
-                            </button>
-                        ))}
-                    </div>
+                    {image && <ExportMenu title="Creative Asset" data={{prompt, imageUrl: image}} />}
                 </div>
 
-                <div className="grid-2">
-                    <div>
-                        {/* INPUTS */}
-                        <div style={{marginBottom: '20px'}}>
-                            <label style={{display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#2D3748'}}>Prompt</label>
-                            <textarea 
-                                value={prompt} 
-                                onChange={e => setPrompt(e.target.value)} 
-                                placeholder={mode === 'edit' ? "e.g., Add a retro filter, remove the person..." : "Describe the image or video..."}
-                                style={{width: '100%', height: '100px'}}
-                            />
-                        </div>
-
-                        {/* UPLOAD (Edit/Video) */}
-                        {(mode === 'edit' || mode === 'video') && (
-                            <div style={{marginBottom: '20px'}}>
-                                <label style={{display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#2D3748'}}>Source Image {mode === 'video' && '(Optional)'}</label>
-                                <div 
-                                    onClick={() => fileRef.current.click()}
-                                    style={{
-                                        border: '2px dashed #CBD5E0', 
-                                        borderRadius: '12px', 
-                                        padding: '20px', 
-                                        textAlign: 'center', 
-                                        cursor: 'pointer',
-                                        background: uploadPreview ? `url(${uploadPreview}) center/cover` : '#F7FAFC',
-                                        height: '120px',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}
-                                >
-                                    {!uploadPreview && <span style={{color: '#718096'}}>Click to Upload</span>}
-                                </div>
-                                <input type="file" ref={fileRef} onChange={handleFile} style={{display: 'none'}} accept="image/*" />
-                            </div>
-                        )}
-
-                        {/* CONTROLS */}
-                        <div className="grid-2" style={{gap: '16px', marginBottom: '24px'}}>
-                            <div>
-                                <label style={{fontSize: '0.8rem', fontWeight: 'bold', color: '#718096'}}>Aspect Ratio</label>
-                                <select value={aspectRatio} onChange={e => setAspectRatio(e.target.value)} style={{width: '100%'}}>
-                                    <option value="1:1">Square (1:1)</option>
-                                    <option value="16:9">Landscape (16:9)</option>
-                                    <option value="9:16">Portrait (9:16)</option>
-                                    <option value="4:3">Standard (4:3)</option>
-                                    <option value="3:4">Vertical (3:4)</option>
-                                </select>
-                            </div>
-                            {mode === 'generate' && (
-                                <div>
-                                    <label style={{fontSize: '0.8rem', fontWeight: 'bold', color: '#718096'}}>Size</label>
-                                    <select value={imageSize} onChange={e => setImageSize(e.target.value)} style={{width: '100%'}}>
-                                        <option value="1K">HD (1K)</option>
-                                        <option value="2K">2K</option>
-                                        <option value="4K">4K</option>
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-
-                        <button onClick={handleGenerate} disabled={loading} className="cta-button" style={{width: '100%', justifyContent: 'center'}}>
-                            {loading ? 'Processing...' : (
-                                <>
-                                    {mode === 'generate' && <Icons.Image />}
-                                    {mode === 'edit' && <Icons.Spark />}
-                                    {mode === 'video' && <Icons.Movie />}
-                                    <span>{mode === 'edit' ? 'Transform' : 'Generate'}</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-
-                    {/* PREVIEW AREA */}
-                    <div style={{background: '#1A202C', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', overflow: 'hidden'}}>
-                        {loading ? (
-                            <div style={{color: 'white', textAlign: 'center'}}>
-                                <Icons.Live />
-                                <div style={{marginTop: '12px'}}>Creating Magic...</div>
-                            </div>
-                        ) : resultUrl ? (
-                            mode === 'video' ? (
-                                <video src={resultUrl} controls autoPlay loop style={{maxWidth: '100%', maxHeight: '400px'}} />
-                            ) : (
-                                <img src={resultUrl} alt="Result" style={{maxWidth: '100%', maxHeight: '400px'}} />
-                            )
-                        ) : (
-                            <div style={{color: '#718096', textAlign: 'center'}}>
-                                <div style={{fontSize: '3rem', opacity: 0.3, marginBottom: '10px'}}><Icons.Image /></div>
-                                Output Preview
-                            </div>
-                        )}
-                    </div>
+                <div style={{display: 'flex', gap: '10px', marginBottom: '20px'}}>
+                    <input 
+                        type="text" 
+                        value={prompt} 
+                        onChange={e => setPrompt(e.target.value)}
+                        placeholder="e.g., A luxury family picnic on Dana Point beach at sunset..."
+                        style={{flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E0'}} 
+                    />
+                    <button onClick={handleGenerate} disabled={loading} className="cta-button">
+                        {loading ? 'Generating...' : 'Create Visual'}
+                    </button>
                 </div>
+                {image && (
+                    <div style={{textAlign: 'center', background: '#2D3748', padding: '30px', borderRadius: '16px'}}>
+                        <img src={image} alt="Generated Creative" style={{maxWidth: '100%', borderRadius: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)'}} />
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-// --- AI ANALYST (SEARCH, MAPS, THINKING) ---
-const AIAnalystTab = () => {
-    const [query, setQuery] = useState('');
-    const [response, setResponse] = useState(null); // { text, sources }
-    const [mode, setMode] = useState('fast'); // fast, search, maps, deep
-    const [loading, setLoading] = useState(false);
-    const [uploadImage, setUploadImage] = useState(null); // For image analysis
-    const fileRef = useRef(null);
+// ... (DataUploadTab, TabGlossary remain similar) ...
+const DataUploadTab = ({ currentData, onUpdate }) => {
+    const [jsonText, setJsonText] = useState(JSON.stringify(currentData, null, 2));
+    const [error, setError] = useState('');
 
-    const handleFile = (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const base64Raw = evt.target?.result;
-            // Fix: Check if base64Raw is a string before splitting, as FileReader result can be ArrayBuffer
-            if (typeof base64Raw === 'string') {
-                const base64Data = base64Raw.split(',')[1];
-                const mimeType = base64Raw.split(';')[0].split(':')[1];
-                setUploadImage({ data: base64Data, mimeType });
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const askGemini = async () => {
-        if (!query && !uploadImage) return;
-        setLoading(true);
-        setResponse(null);
-
+    const handleSave = () => {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            let res;
-            let sources = [];
-
-            if (mode === 'fast') {
-                // Flash Lite
-                res = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash-lite',
-                    contents: query
-                });
-            } else if (mode === 'search') {
-                // Search Grounding
-                res = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: query,
-                    config: { tools: [{ googleSearch: {} }] }
-                });
-                sources = res.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-            } else if (mode === 'maps') {
-                // Maps Grounding
-                res = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: query,
-                    config: { tools: [{ googleMaps: {} }] }
-                });
-                // Maps sources are also in groundingChunks
-                sources = res.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-            } else if (mode === 'deep') {
-                // Thinking Mode (Gemini 3 Pro)
-                res = await ai.models.generateContent({
-                    model: 'gemini-3-pro-preview',
-                    contents: uploadImage ? { parts: [{inlineData: uploadImage}, {text: query}] } : query,
-                    config: { thinkingConfig: { thinkingBudget: 32768 } } // Max thinking
-                });
-            }
-
-            setResponse({
-                text: res.text,
-                sources: sources
-            });
-
+            const parsed = JSON.parse(jsonText);
+            onUpdate(parsed);
+            setError('');
+            alert('Data updated successfully!');
         } catch (e) {
-            setResponse({ text: "Error: " + e.message });
-        } finally {
-            setLoading(false);
+            setError('Invalid JSON format.');
         }
     };
 
     return (
         <div className="tab-content fade-in">
-            <div className="card" style={{minHeight: '600px', display: 'flex', flexDirection: 'column'}}>
-                <div style={{marginBottom: '24px', borderBottom: '1px solid #EDF2F7', paddingBottom: '16px'}}>
-                    <h3 style={{margin: 0, color: '#1A365D'}}>Market Intelligence Analyst</h3>
-                    <p style={{margin: '4px 0 0 0', color: '#718096'}}>Real-time research, map data, and strategic reasoning.</p>
-                </div>
-
-                {/* MODE TOGGLES */}
-                <div style={{display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap'}}>
-                    {[
-                        {id: 'fast', label: 'Fast Chat', icon: Icons.Bolt},
-                        {id: 'search', label: 'Web Research', icon: Icons.Search},
-                        {id: 'maps', label: 'Location Scout', icon: Icons.Map},
-                        {id: 'deep', label: 'Deep Strategy', icon: Icons.Brain}
-                    ].map(m => (
-                        <button
-                            key={m.id}
-                            onClick={() => setMode(m.id)}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                padding: '10px 20px', borderRadius: '30px',
-                                border: mode === m.id ? '2px solid #006B76' : '1px solid #E2E8F0',
-                                background: mode === m.id ? '#E6FFFA' : 'white',
-                                color: mode === m.id ? '#006B76' : '#718096',
-                                fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s'
-                            }}
-                        >
-                            <m.icon /> {m.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* RESPONSE AREA */}
-                <div style={{flex: 1, background: '#F7FAFC', borderRadius: '12px', padding: '24px', overflowY: 'auto', border: '1px solid #EDF2F7', marginBottom: '24px'}}>
-                    {loading ? (
-                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', color: '#006B76', fontWeight: '600'}}>
-                            <div className="spinner" style={{width:'20px', height:'20px', border:'3px solid #CBD5E0', borderTop:'3px solid #006B76', borderRadius:'50%'}}></div>
-                            {mode === 'deep' ? 'Thinking deeply (this may take a moment)...' : 'Analyzing...'}
-                        </div>
-                    ) : response ? (
-                        <div>
-                            <div style={{whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#2D3748', fontSize: '1rem'}}>
-                                {response.text ? parseBold(response.text) : 'No response content.'}
-                            </div>
-                            {/* Sources / Grounding */}
-                            {response.sources && response.sources.length > 0 && (
-                                <div style={{marginTop: '24px', borderTop: '1px solid #E2E8F0', paddingTop: '16px'}}>
-                                    <div style={{fontSize: '0.75rem', fontWeight: 'bold', color: '#718096', marginBottom: '8px', textTransform: 'uppercase'}}>Verified Sources</div>
-                                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
-                                        {response.sources.map((s, i) => {
-                                            if (s.web?.uri) {
-                                                return (
-                                                    <a key={i} href={s.web.uri} target="_blank" rel="noreferrer" style={{fontSize: '0.8rem', color: '#006B76', background: 'white', padding: '4px 10px', borderRadius: '4px', border: '1px solid #B2F5EA', textDecoration: 'none'}}>
-                                                        {s.web.title || 'Web Source'} ↗
-                                                    </a>
-                                                )
-                                            }
-                                            if (s.maps?.placeId) { // Basic map check
-                                                return (
-                                                    <span key={i} style={{fontSize: '0.8rem', color: '#C53030', background: '#FFF5F5', padding: '4px 10px', borderRadius: '4px', border: '1px solid #FED7D7'}}>
-                                                        📍 {s.maps.title}
-                                                    </span>
-                                                )
-                                            }
-                                            return null;
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div style={{textAlign: 'center', marginTop: '80px', color: '#A0AEC0'}}>
-                            <Icons.Brain />
-                            <p>Select a mode and ask a question to begin.</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* INPUT AREA */}
-                <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
-                    {mode === 'deep' && (
-                        <>
-                            <input type="file" ref={fileRef} onChange={handleFile} style={{display:'none'}} accept="image/*" />
-                            <button onClick={() => fileRef.current.click()} style={{padding: '12px', borderRadius: '50%', border: '1px solid #E2E8F0', background: uploadImage ? '#E6FFFA' : 'white', cursor: 'pointer', color: uploadImage ? '#006B76' : '#718096'}}>
-                                <Icons.Image />
-                            </button>
-                        </>
-                    )}
-                    <input 
-                        type="text" 
-                        value={query} 
-                        onChange={e => setQuery(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && askGemini()}
-                        placeholder={mode === 'deep' ? "Ask a complex strategic question (or upload image to analyze)..." : mode === 'search' ? "Search for latest trends..." : "Type your query..."}
-                        style={{flex: 1, padding: '16px', borderRadius: '12px', border: '1px solid #CBD5E0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', fontSize: '1rem'}}
-                    />
-                    <button onClick={askGemini} disabled={loading} className="cta-button" style={{padding: '16px 24px', borderRadius: '12px'}}>
-                        <Icons.Spark /> Send
-                    </button>
+            <div className="card">
+                <h3>💾 Data Management</h3>
+                <p style={{fontSize: '0.9rem', color: '#718096'}}>Directly edit the JSON data powering this dashboard.</p>
+                <textarea 
+                    value={jsonText} 
+                    onChange={e => setJsonText(e.target.value)}
+                    style={{width: '100%', height: '400px', fontFamily: 'monospace', padding: '12px', border: '1px solid #CBD5E0', borderRadius: '8px', fontSize: '0.85rem'}}
+                />
+                {error && <div style={{color: 'red', marginTop: '8px'}}>{error}</div>}
+                <div style={{marginTop: '16px', textAlign: 'right'}}>
+                    <button onClick={handleSave} className="cta-button">Update Dashboard Data</button>
                 </div>
             </div>
         </div>
     );
 };
 
-// --- TABS ---
-
-const TabPulse = ({ data, onHomeClick }) => (
-  <div className="tab-content fade-in">
-    <DmoImpactPanel data={data} />
-    <HeadlineInsight headline={data.pulse.headline} />
-    
-    <div style={{ margin: '32px 0' }}>
-       <IndustryNewsSection />
-    </div>
-
-    <div className="grid-4" style={{ marginTop: '32px' }}>
-      {data.pulse.kpis.map((kpi, i) => <KPICard key={i} data={kpi} />)}
-    </div>
-    <div className="grid-2" style={{ marginTop: '32px' }}>
-      <ActionItems actions={data.pulse.actions} />
-      <div className="card">
-        <h3 style={{ color: '#D69E2E', borderBottomColor: '#FEFCBF' }}>⚠️ RISK MONITOR</h3>
-        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '1rem', color: '#2D3748', lineHeight: '1.8' }}>
-          <li>
-            <strong>Mobile Experience:</strong> 58% of traffic is mobile, but Calendar page has "browser not supported" warning.
-          </li>
-          <li>
-            <strong>Booking Gap:</strong> Activity pages (47% traffic) do not link to hotel booking engine (1% traffic).
-          </li>
-          <li>
-            <strong>Occupancy Softening:</strong> Oct occupancy (64.2%) dropped from peak July (70.3%).
-          </li>
-        </ul>
-        <div style={{ marginTop: '24px', padding: '12px', borderRadius: '8px', background: 'rgba(56, 161, 105, 0.1)', fontSize: '0.9rem', fontWeight: 'bold', color: '#2F855A', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>✅</span> STATUS: No Critical Red Flags. All KPIs positive YoY.
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const TabHospitality = ({ data }) => (
-  <div className="tab-content fade-in">
-    <div className="grid-2">
-      <div className="card">
-        <h3>Occupancy Trend (Trailing 12 Months)</h3>
-        <TrendChart data={data.hospitality.occupancyTrend} target={70} />
-      </div>
-      <div className="card">
-        <h3>Competitive Benchmarks</h3>
-        <BenchmarkChart items={data.hospitality.benchmarks} />
-      </div>
-    </div>
-    
-    <h3 style={{marginTop: '32px', color: '#2D3748'}}>Property Class Performance</h3>
-    <div className="grid-4">
-      {data.hospitality.propertyClass.map((prop, i) => (
-        <div key={i} className="card" style={{borderTop: '4px solid #3182CE'}}>
-           <div style={{fontWeight: '700', color: '#2D3748', fontSize: '1.1rem', marginBottom: '8px'}}>{prop.name}</div>
-           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
-             <span style={{color:'#718096', fontSize:'0.9rem'}}>Occupancy</span>
-             <span style={{fontWeight:'700'}}>{prop.occ}</span>
-           </div>
-           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
-             <span style={{color:'#718096', fontSize:'0.9rem'}}>ADR</span>
-             <span style={{fontWeight:'700'}}>{prop.adr}</span>
-           </div>
-           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
-             <span style={{color:'#718096', fontSize:'0.9rem'}}>RevPAR</span>
-             <span style={{fontWeight:'700'}}>{prop.revpar}</span>
-           </div>
-           <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #E2E8F0', color: '#38A169', fontSize: '0.85rem', fontWeight: '700'}}>
-             {prop.growth} YoY
-           </div>
-        </div>
-      ))}
-    </div>
-
-    <div className="card" style={{marginTop: '32px'}}>
-      <h3>Revenue Seasonality (Waterfall)</h3>
-      <HeatMap data={data.hospitality.revenueWaterfall.map(d => d.val)} />
-    </div>
-  </div>
-);
-
-const TabEconomics = ({ data }) => (
-  <div className="tab-content fade-in">
-    <div className="grid-2">
-       <ScenarioSlider data={data} />
-       <div className="card">
-          <h3>Visitor Spending Categories</h3>
-          <div style={{display:'flex', flexDirection:'column', gap:'16px', justifyContent:'center', height:'100%'}}>
-             {data.economics.categories.map((cat, i) => (
-               <div key={i}>
-                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:'6px', fontWeight:'600'}}>
-                   <span>{cat.name}</span>
-                   <span>${cat.val}M ({cat.pct}%)</span>
-                 </div>
-                 <div style={{width:'100%', height:'12px', background:'#EDF2F7', borderRadius:'6px', overflow:'hidden'}}>
-                   <div style={{width:`${cat.pct}%`, height:'100%', background:'#38A169'}} />
-                 </div>
-               </div>
-             ))}
-          </div>
-       </div>
-    </div>
-    
-    <div style={{marginTop:'32px', textAlign:'center', padding:'40px', background:'white', borderRadius:'16px', border:'1px solid #E2E8F0'}}>
-        <h2 style={{color: '#2D3748', margin: '0 0 16px 0'}}>Total Economic Impact Goal</h2>
-        <div style={{fontSize: '4rem', fontWeight: '800', color: '#006B76'}}>${data.economics.spend}M</div>
-        <div style={{color: '#718096', fontSize: '1.2rem'}}>Current Annual Visitor Spending</div>
-        <div style={{marginTop: '24px'}}>
-           <span style={{background:'#EDF2F7', padding:'8px 16px', borderRadius:'20px', color:'#4A5568', fontWeight:'600'}}>
-              Target: ${data.economics.target}M by 2026
-           </span>
-        </div>
-    </div>
-  </div>
-);
-
-const TabGrowth = ({ data }) => (
-  <div className="tab-content fade-in">
-    <div className="grid-2">
-      <div className="card">
-        <h3>Key Feeder Markets</h3>
-        <table style={{width:'100%', borderCollapse:'collapse'}}>
-          <thead>
-            <tr style={{borderBottom:'2px solid #E2E8F0', textAlign:'left'}}>
-              <th style={{padding:'8px'}}>Market</th>
-              <th style={{padding:'8px'}}>Share</th>
-              <th style={{padding:'8px'}}>Volume</th>
-              <th style={{padding:'8px'}}>Growth</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.growth.markets.map((m, i) => (
-              <tr key={i} style={{borderBottom:'1px solid #EDF2F7'}}>
-                <td style={{padding:'12px 8px', fontWeight:'600'}}>{m.name}</td>
-                <td style={{padding:'12px 8px'}}>{m.share}%</td>
-                <td style={{padding:'12px 8px'}}>{m.val}</td>
-                <td style={{padding:'12px 8px', color:'#38A169', fontWeight:'700'}}>{m.growth}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="card">
-         <h3>Visitor Demographics</h3>
-         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px'}}>
-            {data.growth.demographics.map((d, i) => (
-               <div key={i} style={{padding:'16px', background:'#F7FAFC', borderRadius:'8px', textAlign:'center'}}>
-                  <div style={{fontSize:'1.5rem', fontWeight:'800', color:'#2C5282'}}>{d.value}</div>
-                  <div style={{fontSize:'0.85rem', color:'#718096'}}>{d.label}</div>
-               </div>
-            ))}
-         </div>
-      </div>
-    </div>
-
-    <div className="card" style={{marginTop:'32px'}}>
-       <h3>Growth Trajectory</h3>
-       <div style={{display:'flex', alignItems:'flex-end', height:'200px', gap:'40px', padding:'20px 0'}}>
-          {data.growth.growthTrend.map((t, i) => (
-             <div key={i} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:'100%'}}>
-                <div style={{
-                   width:'60px', 
-                   height:`${(t.val / 3) * 100}%`, 
-                   background: i === 2 ? '#4FD1C5' : '#006B76', 
-                   borderRadius:'8px 8px 0 0',
-                   display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold'
-                }}>
-                  {t.val}M
-                </div>
-                <div style={{marginTop:'12px', fontWeight:'600', color:'#4A5568'}}>{t.year}</div>
-             </div>
-          ))}
-       </div>
-    </div>
-  </div>
-);
-
-const TabDigital = ({ data }) => (
-  <div className="tab-content fade-in">
-    <div className="grid-2">
-       <div className="card">
-          <h3>Website Funnel Efficiency</h3>
-          <FunnelChart stages={data.digital.funnel} />
-       </div>
-       <div className="card">
-          <h3>Traffic Sources & Engagement</h3>
-          <BubbleChart data={data.digital.sources} />
-       </div>
-    </div>
-
-    <div className="grid-2" style={{marginTop:'32px'}}>
-       <div className="card">
-          <h3>Guest Sentiment</h3>
-          {data.digital.sentiment.map((s, i) => (
-             <div key={i} style={{marginBottom:'12px'}}>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.9rem', marginBottom:'4px'}}>
-                   <span style={{fontWeight:'600'}}>{s.cat}</span>
-                   <span style={{color:'#38A169'}}>{s.pos}% Positive</span>
-                </div>
-                <div style={{width:'100%', height:'8px', background:'#FED7D7', borderRadius:'4px', overflow:'hidden'}}>
-                   <div style={{width:`${s.pos}%`, height:'100%', background:'#38A169'}} />
-                </div>
-             </div>
-          ))}
-       </div>
-       <div className="card">
-          <h3>Data Sources Status</h3>
-          <table style={{width:'100%', fontSize:'0.9rem'}}>
-             <thead>
-                <tr style={{textAlign:'left', color:'#718096'}}>
-                   <th style={{paddingBottom:'8px'}}>Source</th>
-                   <th style={{paddingBottom:'8px'}}>Type</th>
-                   <th style={{paddingBottom:'8px'}}>Status</th>
-                </tr>
-             </thead>
-             <tbody>
-                {data.digital.dataSources.map((ds, i) => (
-                   <tr key={i}>
-                      <td style={{padding:'8px 0', fontWeight:'600'}}>{ds.name}</td>
-                      <td style={{color:'#718096'}}>{ds.type}</td>
-                      <td><span className="badge badge-green">{ds.status}</span></td>
-                   </tr>
-                ))}
-             </tbody>
-          </table>
-       </div>
-    </div>
-  </div>
-);
-
-const TabEvents = ({ data }) => (
-  <div className="tab-content fade-in">
-    <div className="card">
-       <h3>Signature Event Impact: Ohana Festival</h3>
-       <div style={{overflowX: 'auto'}}>
-       <table style={{width:'100%', borderCollapse:'collapse', marginTop:'16px'}}>
-          <thead>
-             <tr style={{background:'#F7FAFC', textAlign:'left'}}>
-                <th style={{padding:'12px'}}>Year</th>
-                <th style={{padding:'12px'}}>Attendance (k)</th>
-                <th style={{padding:'12px'}}>Econ Impact ($M)</th>
-                <th style={{padding:'12px'}}>Trend</th>
-             </tr>
-          </thead>
-          <tbody>
-             {data.events.ohana.map((e, i) => (
-                <tr key={i} style={{borderBottom:'1px solid #EDF2F7'}}>
-                   <td style={{padding:'12px', fontWeight:'700'}}>{e.year}</td>
-                   <td style={{padding:'12px'}}>{e.att}k</td>
-                   <td style={{padding:'12px'}}>${e.spend}M</td>
-                   <td style={{padding:'12px'}}>
-                      {i > 0 && e.spend > data.events.ohana[i-1].spend ? <span style={{color:'#38A169'}}>↑ Growth</span> : '-'}
-                   </td>
-                </tr>
-             ))}
-          </tbody>
-       </table>
-       </div>
-    </div>
-
-    <div className="grid-2" style={{marginTop:'32px'}}>
-       <div className="card">
-          <h3>Seasonality Gap Analysis</h3>
-          <div style={{display:'flex', justifyContent:'space-around', alignItems:'center', padding:'20px'}}>
-             <div style={{textAlign:'center'}}>
-                <div style={{fontSize:'0.9rem', color:'#718096'}}>Peak Spend</div>
-                <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'#38A169'}}>${data.events.gapAnalysis.peak}M</div>
-             </div>
-             <div style={{fontSize:'1.5rem', color:'#CBD5E0'}}>vs</div>
-             <div style={{textAlign:'center'}}>
-                <div style={{fontSize:'0.9rem', color:'#718096'}}>Low Season</div>
-                <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'#E53E3E'}}>${data.events.gapAnalysis.low}M</div>
-             </div>
-          </div>
-          <div style={{textAlign:'center', marginTop:'16px', padding:'12px', background:'#FFF5F5', color:'#C53030', borderRadius:'8px', fontWeight:'600'}}>
-             Opportunity Gap: ${data.events.gapAnalysis.gap}M
-          </div>
-       </div>
-       <div className="card">
-          <h3>Monthly Spend Intensity</h3>
-          <HeatMap data={data.events.seasonality} />
-       </div>
-    </div>
-  </div>
-);
-
-const TabStrategic = ({ data }) => (
-  <div className="tab-content fade-in">
-    <h3 style={{color:'#1A365D'}}>2026 Strategic Scorecard</h3>
-    <div className="grid-4" style={{marginBottom:'32px'}}>
-       {data.strategic.scorecard.map((s, i) => (
-          <div key={i} className="card" style={{borderLeft:`4px solid ${s.status === 'green' ? '#38A169' : s.status === 'yellow' ? '#D69E2E' : '#E53E3E'}`}}>
-             <div style={{fontSize:'0.9rem', color:'#718096'}}>{s.name}</div>
-             <div style={{fontSize:'1.8rem', fontWeight:'800', color:'#2D3748', margin:'8px 0'}}>{s.current}</div>
-             <div style={{fontSize:'0.8rem', color:'#A0AEC0'}}>Target: {s.target}</div>
-          </div>
-       ))}
-    </div>
-
-    <div className="card">
-       <h3>Strategic Initiatives Roadmap</h3>
-       <table style={{width:'100%', borderCollapse:'collapse'}}>
-          <thead>
-             <tr style={{borderBottom:'2px solid #E2E8F0', textAlign:'left'}}>
-                <th style={{padding:'12px'}}>Initiative</th>
-                <th style={{padding:'12px'}}>Status</th>
-                <th style={{padding:'12px'}}>Owner</th>
-                <th style={{padding:'12px'}}>Est. ROI</th>
-             </tr>
-          </thead>
-          <tbody>
-             {data.strategic.initiatives.map((item, i) => (
-                <tr key={i} style={{borderBottom:'1px solid #EDF2F7'}}>
-                   <td style={{padding:'16px 12px', fontWeight:'600'}}>{item.name}</td>
-                   <td style={{padding:'16px 12px'}}>
-                      <span style={{
-                         padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'600',
-                         background: item.status === 'Urgent' ? '#FED7D7' : item.status === 'Planned' ? '#C6F6D5' : '#FEFCBF',
-                         color: item.status === 'Urgent' ? '#C53030' : item.status === 'Planned' ? '#2F855A' : '#744210'
-                      }}>
-                         {item.status}
-                      </span>
-                   </td>
-                   <td style={{padding:'16px 12px', color:'#718096'}}>{item.owner}</td>
-                   <td style={{padding:'16px 12px', fontWeight:'700', color:'#38A169'}}>{item.roi}</td>
-                </tr>
-             ))}
-          </tbody>
-       </table>
-    </div>
-  </div>
-);
-
 const TabGlossary = () => (
-   <div className="tab-content fade-in">
-      <div className="card">
-         <h3 style={{color:'#006B76'}}>Metrics Glossary & Data Sources</h3>
-         <div style={{display:'grid', gap:'20px'}}>
-            {glossaryTerms.map((term, i) => (
-               <div key={i} style={{paddingBottom:'20px', borderBottom: i < glossaryTerms.length-1 ? '1px solid #EDF2F7' : 'none'}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline'}}>
-                     <h4 style={{margin:'0 0 8px 0', color:'#2D3748'}}>{term.term}</h4>
-                     <span style={{fontSize:'0.75rem', background:'#E6FFFA', color:'#006B76', padding:'2px 8px', borderRadius:'4px'}}>{term.source}</span>
-                  </div>
-                  <p style={{margin:0, color:'#4A5568', lineHeight:'1.6'}}>{term.def}</p>
-               </div>
-            ))}
-         </div>
-      </div>
-   </div>
+    <div className="tab-content fade-in">
+        <div className="card">
+            <h3>Metric Definitions & Sources</h3>
+            <div style={{display: 'grid', gap: '24px'}}>
+                {glossaryTerms.map((term, i) => (
+                    <div key={i}>
+                        <div style={{fontWeight: '700', color: '#2D3748'}}>{term.term}</div>
+                        <div style={{fontSize: '0.95rem', color: '#4A5568', marginTop: '4px'}}>{term.def}</div>
+                        <div style={{fontSize: '0.8rem', color: '#718096', marginTop: '4px', fontStyle: 'italic'}}>Source: {term.source}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
 );
+
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('pulse');
@@ -1796,7 +1348,7 @@ const App = () => {
         <TopBanner data={dashboardData} onHomeClick={() => setActiveTab('pulse')} />
         
         {viewOptimization && (
-            <div style={{ background: '#2D3748', color: 'white', padding: '8px 48px', fontSize: '0.75rem', textAlign: 'center', letterSpacing: '0.05em' }}>
+            <div className="no-print" style={{ background: '#2D3748', color: 'white', padding: '8px 48px', fontSize: '0.75rem', textAlign: 'center', letterSpacing: '0.05em' }}>
                 ℹ️ {viewOptimization}
             </div>
         )}
