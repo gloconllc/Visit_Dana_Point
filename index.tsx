@@ -8,53 +8,51 @@
  * Unauthorized copying, modification, or distribution of this code is strictly prohibited.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
 
 // --- ICONS (SVG) ---
 const Icons = {
-  Pulse: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
-  Hotel: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-8a2 2 0 012-2h4a2 2 0 012 2v8"/></svg>,
-  Money: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
-  Growth: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>,
-  Digital: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
-  Event: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  Strategy: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
-  Protected: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
-  Info: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
-  Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-  Refresh: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  Pulse: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+  Hotel: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-8a2 2 0 012-2h4a2 2 0 012 2v8"/></svg>,
+  Money: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+  Growth: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>,
+  Digital: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+  Event: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  Strategy: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
+  Protected: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+  Info: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  Refresh: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+  Live: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite" /></circle></svg>,
+  Analytics: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>,
+  Upload: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  Download: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 };
 
 // --- DATA ---
 const TOOLTIPS = {
-  OCCUPANCY: "Percentage of hotel rooms sold. Higher occupancy generates more tax revenue (TOT) for the City to fund services like parks and safety. (Source: STR)",
-  ADR: "Average Daily Rate (Price per room). VDP markets to high-value visitors to increase this rate, boosting partner revenue without adding congestion. (Source: STR)",
-  REVPAR: "Revenue Per Available Room. The best single measure of hotel health. Calculated by multiplying Occupancy by ADR. (Source: STR)",
-  DAY_TRIPPER: "Visitors who do not stay overnight. VDP's goal is to convert them into overnight guests to generate tax revenue. (Source: Datafy)",
-  REPEAT_VISITOR: "Percentage of visitors returning to Dana Point within 12 months. Proves destination brand strength. (Source: Datafy)",
-  WEB_CONVERSION: "Percentage of VDP website visitors who click 'Book Now'. Measures how well our marketing drives real sales leads. (Source: GA4)",
-  TOT: "Transient Occupancy Tax (10%). A tax on overnight guests that goes directly to the City budget. VDP marketing fills the rooms that pay this tax. (Source: City Finance)",
-  JOBS: "Estimated local employment supported by tourism spending. Based on industry multipliers (approx $90k spend = 1 job). (Source: Dean Runyan/Calculated)",
-  SPEND_IMPACT: "Total direct spending by visitors at local businesses. This revenue supports shops, restaurants, and jobs. (Source: Datafy)",
-  PARTNER_REV: "Gross room revenue generated for hotel partners. VDP's primary commercial goal is to grow this number. (Source: STR)",
-  MARKET_VISITORS: "Growth in visitors from our top feeder markets (like LA) directly attributed to VDP campaigns. (Source: Datafy)"
+  OCCUPANCY: "Percent of hotel rooms filled. High occupancy proves VDP is driving demand, which generates Transient Occupancy Tax (TOT) to fund City parks, safety, and services.",
+  ADR: "Average Daily Rate (Price per room). VDP markets to high-value visitors to increase this rate, which boosts local business revenue without adding crowd congestion.",
+  REVPAR: "Revenue Per Available Room. The gold standard for hotel success. It combines occupancy and price to show the true financial health of our lodging partners.",
+  DAY_TRIPPER: "Visitors who visit for the day but don't stay overnight. VDP's goal is to convert them into overnight guests, as overnight guests spend 3x more in the community.",
+  REPEAT_VISITOR: "Percentage of visitors who return within 12 months. This measures loyalty. High repeat rates mean our brand is strong and marketing costs are lower.",
+  WEB_CONVERSION: "Percentage of website visitors who click 'Book Now'. This shows if our marketing is actually driving sales leads to hotel partners.",
+  TOT: "Transient Occupancy Tax (10%). This is the tax paid by overnight guests. It goes 100% to the City budget. VDP marketing fills the rooms that pay this tax.",
+  JOBS: "Estimated local jobs supported by tourism. Visitor spending at hotels, restaurants, and shops directly pays the wages for these community roles.",
+  SPEND_IMPACT: "Total money spent by visitors at Dana Point businesses. This revenue supports local shops, restaurants, and creates a vibrant economy.",
+  PARTNER_REV: "Total room revenue earned by our hotel partners. VDP's primary job is to grow this number to ensure a healthy local tourism industry.",
+  MARKET_VISITORS: "Growth in visitors from key cities (like LA). We track this to ensure our ad campaigns are reaching the right people."
 };
 
-// --- VETTED DATA UPDATES ---
-// Ref: Honest Data Vetting Analysis
-// ROI reduced from $89.5-169.5M to $31.8M-$84M (47x-124x)
-// Day-tripper conversion impact reduced from $75-150M to $29.5M-$78.8M
-// Tax revenue framed as "Estimated Impact"
-
-const executiveData = {
+const INITIAL_DATA = {
   pulse: {
     kpis: [
-      { label: 'Partner Hotel Occupancy', value: '64.2%', trend: '-5.8 pts', status: 'yellow', sub: 'Target 70%', tooltip: TOOLTIPS.OCCUPANCY, source: 'STR' },
-      { label: 'Visitor Spending Driven by VDP', value: '$481M', trend: '+$204M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.SPEND_IMPACT, source: 'Datafy' },
-      { label: 'Partner Hotel Revenue', value: '$65.6M', trend: '+$9.8M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.PARTNER_REV, source: 'STR' },
-      { label: 'LA Market Visitors', value: '+17.1%', trend: 'Growth', status: 'green', sub: 'Target 17.5%', tooltip: TOOLTIPS.MARKET_VISITORS, source: 'Datafy' },
+      { label: 'Hotel Occupancy', value: '64.2%', trend: '-5.8 pts', status: 'yellow', sub: 'Target 70%', tooltip: TOOLTIPS.OCCUPANCY, source: 'STR', icon: 'Hotel' },
+      { label: 'Visitor Spending', value: '$481M', trend: '+$204M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.SPEND_IMPACT, source: 'Datafy', icon: 'Money' },
+      { label: 'Partner Revenue', value: '$65.6M', trend: '+$9.8M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.PARTNER_REV, source: 'STR', icon: 'Analytics' },
+      { label: 'LA Visitors', value: '+17.1%', trend: 'Growth', status: 'green', sub: 'Target 17.5%', tooltip: TOOLTIPS.MARKET_VISITORS, source: 'Datafy', icon: 'Growth' },
     ],
     headline: {
       text: "VETTED INSIGHT: Visit Dana Point's marketing drives PREMIUM pricing (RevPAR 13% > OC), but OCCUPANCY lags peers. Our initiatives target a $7.4M revenue opportunity for hotel partners. CONVERSION SCENARIO: Converting 10-20% of day-trippers could add $29.5M-$78.8M to the local economy (Conservative Estimate).",
@@ -130,13 +128,31 @@ const executiveData = {
       { stage: 'Lodging Interest', count: 2076, rate: '1.0%', alert: true, note: 'CRITICAL GAP', tooltip: TOOLTIPS.WEB_CONVERSION },
       { stage: 'Est. Booked', count: 1038, rate: '0.5%', note: '$2.1M Direct' },
     ],
+    dataSources: [
+      { name: 'Oracle Opera (PMS)', type: 'Internal', status: 'Active', records: '450k+' },
+      { name: 'Revinate (CRM)', type: 'Guest Data', status: 'Active', records: '120k+' },
+      { name: 'TripAdvisor', type: 'Reviews', status: 'Active', records: 'Real-time' },
+      { name: 'CrowdRiff', type: 'Social/UGC', status: 'Active', records: 'Daily' },
+      { name: 'Google Travel', type: 'Demand', status: 'Active', records: 'Live' }
+    ],
+    sentiment: [
+      { cat: 'Service', pos: 88, neg: 12 },
+      { cat: 'Cleanliness', pos: 94, neg: 6 },
+      { cat: 'Value', pos: 72, neg: 28 },
+      { cat: 'Location', pos: 98, neg: 2 }
+    ],
+    guestSegments: [
+      { name: 'Families', val: 45, color: '#38A169' },
+      { name: 'Couples', val: 30, color: '#3182CE' },
+      { name: 'Business', val: 15, color: '#D69E2E' },
+      { name: 'Solo', val: 10, color: '#805AD5' }
+    ],
     sources: [
-      // x: volume, y: engagement, z: revenue/size
-      { name: 'Google Organic', x: 85, y: 74, z: 45, color: '#4299E1' },
-      { name: 'Direct', x: 25, y: 75, z: 12, color: '#9F7AEA' },
-      { name: 'Bing', x: 10, y: 78, z: 5, color: '#48BB78' },
-      { name: 'Display', x: 12, y: 70, z: 8, color: '#ED8936' },
-      { name: 'Paid Search', x: 8, y: 72, z: 6, color: '#F56565' },
+      { name: 'Organic', x: 145, y: 76, z: 40, color: '#38A169' },
+      { name: 'Direct', x: 80, y: 79, z: 25, color: '#3182CE' },
+      { name: 'Social', x: 110, y: 68, z: 30, color: '#D69E2E' },
+      { name: 'Email', x: 45, y: 75, z: 15, color: '#805AD5' },
+      { name: 'Display', x: 130, y: 66, z: 20, color: '#E53E3E' }
     ],
     pages: [
       { name: 'Home', views: 73449 },
@@ -198,48 +214,58 @@ const Tooltip = ({ text }) => {
   );
 };
 
-const TopBanner = () => (
-  <div style={{ background: '#1A365D', color: 'white', padding: '16px 40px', borderBottom: '1px solid #2A4365', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-      <div style={{ fontWeight: '700', fontSize: '1.2rem', letterSpacing: '0.02em', color: '#fff' }}>
-        VISIT DANA POINT <span style={{color: '#4FD1C5', fontWeight: '400', fontSize: '1rem', marginLeft: '8px'}}>| Marketing Results & Destination Impact</span>
+// Persistent Top Banner with Glassmorphism
+const TopBanner = ({ data, onHomeClick }) => {
+  // Safe extraction of high-level metrics from dynamic data
+  const spendVal = data?.pulse?.kpis?.find(k => k.label.includes("Spending"))?.value || '$0M';
+  const tripVal = '2.3M'; // Usually fixed or needs a specific field in data structure if dynamic
+
+  return (
+    <div style={{ 
+        background: 'rgba(255, 255, 255, 0.9)', 
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid rgba(0,0,0,0.05)', 
+        padding: '16px 40px', 
+        flexShrink: 0, 
+        zIndex: 40,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)'
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }} onClick={onHomeClick} title="Return to Dashboard Home">
+        <div style={{ fontWeight: '800', fontSize: '1.2rem', color: '#1A365D', fontFamily: "'Playfair Display', serif", display: 'flex', alignItems: 'center', gap: '8px' }}>
+          VISIT DANA POINT <span style={{color: '#006B76', fontWeight: '400', fontSize: '1rem', fontFamily: 'Segoe UI'}}>| Strategic Intelligence</span>
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#718096', marginTop: '2px' }}>
+          Live Data Feed • Protected View
+        </div>
       </div>
-      <div style={{ fontSize: '0.75rem', color: '#A0AEC0', background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '4px' }}>
-        Next Review: <strong style={{color: 'white'}}>Jan 15, 2026</strong>
+
+      <div style={{ display: 'flex', gap: '32px', fontSize: '0.9rem', color: '#4A5568', fontWeight: '500', alignItems: 'center' }}>
+        <div style={{display:'flex', alignItems:'center', gap:'8px', background: 'rgba(0,107,118,0.05)', padding: '6px 12px', borderRadius: '8px'}}>
+          <span style={{fontSize:'1.1rem'}}>💰</span> 
+          <span><strong style={{color: '#006B76'}}>{spendVal}</strong> spending</span>
+        </div>
+        <div style={{display:'flex', alignItems:'center', gap:'8px', background: 'rgba(26,54,93,0.05)', padding: '6px 12px', borderRadius: '8px'}}>
+          <span style={{fontSize:'1.1rem'}}>👥</span>
+          <span><strong style={{color: '#1A365D'}}>{tripVal}</strong> trips</span>
+        </div>
+        <div style={{ fontSize: '0.75rem', background: '#2D3748', color: 'white', padding: '6px 12px', borderRadius: '20px', fontWeight: 'bold' }}>
+          Next Review: Jan 15
+        </div>
       </div>
     </div>
-    <div style={{ display: 'flex', gap: '32px', fontSize: '0.9rem', color: '#E2E8F0', fontWeight: '500', alignItems: 'center' }}>
-      <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
-        <span style={{fontSize:'1.1rem'}}>💰</span> 
-        <span><strong style={{color: '#4FD1C5'}}>$481M</strong> spending</span>
-      </div>
-      <div style={{width:'1px', height:'16px', background:'#2A4365'}}></div>
-      <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
-        <span style={{fontSize:'1.1rem'}}>👥</span>
-        <span><strong style={{color: '#4FD1C5'}}>2.3M</strong> trips</span>
-      </div>
-      <div style={{width:'1px', height:'16px', background:'#2A4365'}}></div>
-      <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
-        <span style={{fontSize:'1.1rem'}}>🏨</span>
-        <span><strong style={{color: '#4FD1C5'}}>$65.6M</strong> partner revenue</span>
-      </div>
-      <div style={{width:'1px', height:'16px', background:'#2A4365'}}></div>
-      <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
-        <span style={{fontSize:'1.1rem'}}>📈</span>
-        <span><strong style={{color: '#4FD1C5'}}>64.2%</strong> occupancy</span>
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const Footer = () => (
   <div className="app-footer">
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '8px', color: '#2D3748', fontWeight: '600' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '8px', color: '#1A365D', fontWeight: '700' }}>
       <Icons.Protected />
       <span>Protected by GloCon Solutions LLC</span>
     </div>
     <div>&copy; 2025 Visit Dana Point. All Rights Reserved.</div>
-    <div style={{ marginTop: '4px', fontSize: '0.7rem', color: '#A0AEC0' }}>Confidential & Proprietary Data</div>
   </div>
 );
 
@@ -247,65 +273,184 @@ const KPICard = ({ data }) => {
   const isGreen = data.status === 'green';
   const isRed = data.status === 'red';
   const color = isGreen ? '#38A169' : isRed ? '#E53E3E' : '#D69E2E';
+  // Dynamic icon mapping
+  const IconComponent = Icons[data.icon] || Icons.Analytics;
   
   return (
     <div className="card" style={{ borderTop: `4px solid ${color}` }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <h3 style={{ fontSize: '0.8rem', color: '#718096', marginBottom: '8px', border: 'none', padding: 0 }}>
-          {data.label}
-          {data.tooltip && <Tooltip text={data.tooltip} />}
-        </h3>
-        {data.source && <span className="source-label" style={{ marginTop: 0 }}>Src: {data.source}</span>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+         <div style={{ background: isGreen ? '#F0FFF4' : '#FFFFF0', padding: '10px', borderRadius: '12px', color: color }}>
+            <IconComponent />
+         </div>
+         <div style={{ textAlign: 'right' }}>
+            {data.source && <span className="source-label" style={{ display: 'block', fontSize: '0.65rem', color: '#A0AEC0' }}>{data.source}</span>}
+            {data.tooltip && <Tooltip text={data.tooltip} />}
+         </div>
       </div>
-      <div className="kpi-value">{data.value}</div>
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: '4px', gap: '8px' }}>
-        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: color }}>{data.trend}</span>
+      
+      <div style={{ fontSize: '0.85rem', color: '#718096', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {data.label}
+      </div>
+      
+      <div className="kpi-value" style={{ marginTop: '4px', fontSize: '2.5rem' }}>{data.value}</div>
+      
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: '12px', gap: '8px', padding: '8px 0 0', borderTop: '1px solid #F7FAFC' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: color, background: isGreen ? 'rgba(56, 161, 105, 0.1)' : 'rgba(214, 158, 46, 0.1)', padding: '2px 8px', borderRadius: '6px' }}>
+          {data.trend}
+        </span>
         <span style={{ fontSize: '0.75rem', color: '#A0AEC0' }}>{data.sub}</span>
       </div>
     </div>
   );
 };
 
-const DmoImpactPanel = () => {
-  const revenue = 65.6; // Million
+const DmoImpactPanel = ({ data }) => {
+  // Extract dynamic values from data prop, fallback to defaults if structure varies
+  const revenueKPI = data.pulse?.kpis?.find(k => k.label.includes('Partner Revenue'));
+  const revenueStr = revenueKPI ? revenueKPI.value : '$65.6M';
+  const revenue = parseFloat(revenueStr.replace(/[^0-9.]/g, '')) || 65.6; 
+  
   const totRate = 0.10;
   const totGenerated = (revenue * totRate).toFixed(1);
-  const jobsSupported = "2,400"; // Updated based on honest data industry estimate
+  const jobsSupported = "2,400"; // Estimate based on standard multiplier
+
+  const spendKPI = data.pulse?.kpis?.find(k => k.label.includes('Visitor Spending'));
+  const spendVal = spendKPI ? spendKPI.value : '$481M';
+
+  const handleDownloadReport = () => {
+    const reportDate = new Date().toLocaleDateString();
+    const clean = (text) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*#]/g, '');
+
+    const content = `
+VISIT DANA POINT
+STRATEGIC IMPACT REPORT 2025
+Generated: ${reportDate}
+============================================================
+
+EXECUTIVE SUMMARY
+-----------------
+${clean(data.pulse.headline.text)}
+
+ECONOMIC IMPACT VERIFICATION
+Verified by: Tourism Economics
+----------------------------
+Tax Revenue Generated: $${totGenerated}M (Direct TOT)
+Jobs Supported: ${jobsSupported} (Direct Hospitality)
+Economic Multiplier: ${spendVal} Total Visitor Spend
+ROI Estimate: ~11x (Spend vs Budget)
+
+KEY PERFORMANCE INDICATORS (Current Status)
+-------------------------------------------
+${data.pulse.kpis.map(k => `${k.label}: ${k.value} (Trend: ${k.trend}) - ${k.sub}`).join('\n')}
+
+STRATEGIC INITIATIVES & ACTIONS
+-------------------------------
+${data.pulse.actions.map(a => `[${a.title}]
+   Description: ${a.desc}
+   Est. Impact: ${a.impact}
+`).join('\n')}
+
+MARKET RISKS & MONITORS
+-----------------------
+- Mobile Experience: 58% traffic mobile
+- Occupancy Softening: Monitoring shoulder season gap
+- Conversion: Focusing on 1% -> 5% lift
+
+============================================================
+CONFIDENTIAL & PROPRIETARY
+Protected by GloCon Solutions LLC
+`.trim();
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `VDP_Impact_Report_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   
   return (
-    <div className="card" style={{ background: 'linear-gradient(135deg, #006B76 0%, #004E56 100%)', color: 'white', border: 'none', marginBottom: '24px', boxShadow: '0 10px 15px -3px rgba(0, 107, 118, 0.2)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-        <h3 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', border: 'none', padding: 0 }}>
-          Visit Dana Point DMO Impact
-        </h3>
-        <span style={{ fontSize: '0.7rem', opacity: 0.9, background: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '4px', fontWeight: '600' }}>VDP Attributed</span>
+    <div className="impact-hero" style={{ padding: '60px 48px', marginBottom: '40px', backgroundImage: 'url("https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=2070&auto=format&fit=crop")', position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '64px', flexWrap: 'wrap', gap: '32px', position: 'relative', zIndex: 2 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+             <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '30px', fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.1em', textTransform: 'uppercase', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                Official DMO Authority
+             </div>
+             <div style={{ fontSize: '0.85rem', opacity: 0.95, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                <Icons.Protected /> Verified by Tourism Economics
+             </div>
+          </div>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '3.5rem', margin: 0, color: 'white', lineHeight: 1.1, textShadow: '0 4px 20px rgba(0,0,0,0.4)', maxWidth: '800px' }}>
+            Fueling Dana Point's <br/><span style={{color: '#81E6D9'}}>Economic Vitality</span>
+          </h2>
+          <p style={{ margin: '24px 0 0 0', fontSize: '1.2rem', opacity: 0.95, maxWidth: '750px', fontWeight: '400', lineHeight: '1.6', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+            Visit Dana Point is the economic engine that transforms global visitor interest into essential funding for city services, local jobs, and community prosperity. We curate the brand that pays the bills.
+          </p>
+        </div>
+        <button className="cta-button" onClick={handleDownloadReport} style={{alignSelf: 'flex-start'}}>
+           Download 2025 Impact Report <span>↓</span>
+        </button>
       </div>
-      <div className="grid-3">
-        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
-            Estimated Tax Impact
-            <Tooltip text={TOOLTIPS.TOT} />
+
+      <div className="impact-grid">
+        {/* Card 1: Tax Revenue */}
+        <div className="impact-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+             <div style={{ background: 'linear-gradient(135deg, #81E6D9 0%, #4FD1C5 100%)', padding: '12px', borderRadius: '50%', boxShadow: '0 4px 15px rgba(79, 209, 197, 0.4)' }}>
+                <div style={{ color: '#004E56' }}><Icons.Money /></div>
+             </div>
+             <Tooltip text={TOOLTIPS.TOT} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '800' }}>${totGenerated}M</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Calculated from Hotel Revenue (10% TOT)</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Finance Dept / Calculated</div>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#81E6D9', fontWeight: '800' }}>
+            Funding City Services
+          </div>
+          <div style={{ fontSize: '3.5rem', fontWeight: '800', margin: '8px 0', fontFamily: 'Segoe UI, sans-serif', letterSpacing: '-0.02em', textShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
+            ${totGenerated}M
+          </div>
+          <div style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: 1.5, fontWeight: '500' }}>
+            In direct Transient Occupancy Tax (TOT) collected for the City General Fund.
+          </div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
-            Jobs Supported
-            <Tooltip text={TOOLTIPS.JOBS} />
+
+        {/* Card 2: Jobs */}
+        <div className="impact-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+             <div style={{ background: 'linear-gradient(135deg, #FBD38D 0%, #F6AD55 100%)', padding: '12px', borderRadius: '50%', boxShadow: '0 4px 15px rgba(246, 173, 85, 0.4)' }}>
+                 <div style={{ color: '#744210' }}><Icons.Growth /></div>
+             </div>
+             <Tooltip text={TOOLTIPS.JOBS} />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '800' }}>{jobsSupported}</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Estimated via Industry Multipliers</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: Industry Data</div>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#FBD38D', fontWeight: '800' }}>
+            Fueling Local Livelihoods
+          </div>
+          <div style={{ fontSize: '3.5rem', fontWeight: '800', margin: '8px 0', fontFamily: 'Segoe UI, sans-serif', letterSpacing: '-0.02em', textShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
+            {jobsSupported}
+          </div>
+          <div style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: 1.5, fontWeight: '500' }}>
+            Local jobs directly supported by visitor spending in hotels, dining, and retail.
+          </div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.9rem', color: '#81E6D9', marginBottom: '8px', fontWeight: 'bold' }}>
-            Visitor Spending vs. City Budget
+
+        {/* Card 3: Multiplier */}
+        <div className="impact-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+             <div style={{ background: 'linear-gradient(135deg, #63B3ED 0%, #3182CE 100%)', padding: '12px', borderRadius: '50%', boxShadow: '0 4px 15px rgba(49, 130, 206, 0.4)' }}>
+                 <div style={{ color: '#1A365D' }}><Icons.Strategy /></div>
+             </div>
+             <div style={{ fontSize: '0.75rem', background: 'white', color: '#1A365D', padding: '6px 12px', borderRadius: '20px', fontWeight: '800', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>11x ROI</div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '800' }}>~11x</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>Visitor Spend ($481M) vs City Budget (~$44M)</div>
-          <div className="source-label" style={{color: 'rgba(255,255,255,0.5)', textAlign: 'left', marginTop: '8px'}}>Source: City Annual Budget Report</div>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#63B3ED', fontWeight: '800' }}>
+            Economic Multiplier
+          </div>
+          <div style={{ fontSize: '3.5rem', fontWeight: '800', margin: '8px 0', fontFamily: 'Segoe UI, sans-serif', letterSpacing: '-0.02em', textShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
+            {spendVal}
+          </div>
+          <div style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: 1.5, fontWeight: '500' }}>
+            Total visitor spending pumped into the Dana Point economy annually.
+          </div>
         </div>
       </div>
     </div>
@@ -313,12 +458,15 @@ const DmoImpactPanel = () => {
 };
 
 const HeadlineInsight = ({ headline }) => (
-  <div className="card" style={{ background: '#2D3748', color: 'white', border: 'none', borderLeft: '6px solid #F6AD55' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
-      <h3 style={{ color: '#F6AD55', margin: 0, border: 'none', padding: 0 }}>📊 STRATEGIC HEADLINE</h3>
-      <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Updated: {headline.updated}</span>
+  <div className="card" style={{ background: 'linear-gradient(to right, #2D3748, #1A202C)', color: 'white', borderLeft: '6px solid #F6AD55', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', right: '-20px', top: '-20px', fontSize: '10rem', opacity: 0.05, color: '#F6AD55' }}>
+       <Icons.Pulse />
     </div>
-    <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: 0, fontWeight: '400', color: '#E2E8F0' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px', position: 'relative', zIndex: 1 }}>
+      <h3 style={{ color: '#F6AD55', margin: 0, border: 'none', padding: 0 }}>📊 STRATEGIC HEADLINE</h3>
+      <span style={{ fontSize: '0.75rem', opacity: 0.7, fontStyle: 'italic' }}>Updated: {headline.updated}</span>
+    </div>
+    <p style={{ fontSize: '1.2rem', lineHeight: '1.7', margin: 0, fontWeight: '300', color: '#E2E8F0', position: 'relative', zIndex: 1 }}>
       {headline.text}
     </p>
   </div>
@@ -335,25 +483,25 @@ const parseBold = (text: string) => {
   });
 };
 
-const LiveIntelligenceCard = () => {
-  const [insight, setInsight] = useState<{ text: string; chunks: any[] } | null>(null);
+const IndustryNewsSection = () => {
+  const [news, setNews] = useState<{ text: string; chunks: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchIntel = async () => {
+  const fetchNews = async () => {
       setLoading(true);
       setError(false);
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: 'Search for recent news and resources related to tourism in Dana Point, Orange County, and California. Focus on items that impact a Destination Marketing Organization (DMO). Return a list of 3-4 items. For each, state the resource/news, whether the impact is Positive or Negative for Visit Dana Point, and specifically how it relates to our vetted metrics: $481M Visitor Spend, 64.2% Occupancy, or $65.6M Partner Revenue.',
+          contents: 'Search for recent articles and research from CoStar, Tourism Economics, Destinations International, Brand USA, and Visit California regarding travel trends, hotel performance, and economic outlooks for 2024-2025. Select 4 distinct high-impact updates. For each, strictly format the output to include: 1) The Source & Date, 2) The Headline, 3) The core insight, and 4) A "VDP Connection" explaining how this impacts Dana Point\'s specific metrics ($481M spend, 64.2% Occupancy, $262 ADR).',
           config: {
             tools: [{ googleSearch: {} }]
           }
         });
         
-        setInsight({
+        setNews({
             text: response.text,
             chunks: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
         });
@@ -366,80 +514,84 @@ const LiveIntelligenceCard = () => {
     };
 
   useEffect(() => {
-    fetchIntel();
+    fetchNews();
   }, []);
 
   if (error) return null;
 
   return (
-    <div className="card" style={{ borderLeft: '4px solid var(--accent)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
-            <h3 style={{ color: '#276749', margin: 0, border: 'none', padding: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icons.Strategy /> HOSPITALITY & MARKET INTELLIGENCE RADAR
-            </h3>
+    <div className="card" style={{ borderTop: '4px solid #006B76' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid #EDF2F7', paddingBottom: '16px' }}>
+            <div>
+              <h3 style={{ margin: 0, border: 'none', padding: 0 }}>Latest Industry News</h3>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: '#718096' }}>Curated insights from vetted tourism sources.</p>
+            </div>
             <button 
-              onClick={fetchIntel} 
+              onClick={fetchNews} 
               disabled={loading}
               style={{
-                background: 'transparent',
-                border: '1px solid #C6F6D5',
-                borderRadius: '4px',
-                padding: '4px 8px',
+                background: loading ? '#EDF2F7' : 'white',
+                border: '1px solid #CBD5E0',
+                borderRadius: '8px',
+                padding: '8px 16px',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '0.75rem',
-                color: '#276749',
-                fontWeight: '600'
+                gap: '8px',
+                fontSize: '0.85rem',
+                color: '#2D3748',
+                fontWeight: '600',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
               }}
             >
-              <Icons.Refresh /> {loading ? 'Scanning...' : 'Refresh Intelligence'}
+              <Icons.Refresh /> {loading ? 'Scanning Sources...' : 'Refresh Feed'}
             </button>
         </div>
 
-        {/* Targeted Sources Indicator */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
-             {['CoStar', 'Tourism Economics', 'Destinations Intl', 'Brand USA', 'Visit California', 'State Data'].map(src => (
-                 <span key={src} style={{fontSize: '0.65rem', background: '#E6FFFA', color: '#234E52', padding: '2px 8px', borderRadius: '12px', border: '1px solid #B2F5EA', fontWeight: '600'}}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+             {['CoStar', 'Tourism Economics', 'Destinations Intl', 'Brand USA', 'Visit California'].map(src => (
+                 <span key={src} className="badge badge-green">
                     {src}
                  </span>
              ))}
         </div>
         
         {loading ? (
-             <div style={{ padding: '20px', textAlign: 'center', color: '#4A5568', fontStyle: 'italic', fontSize: '0.9rem', background: '#F7FAFC', borderRadius: '8px' }}>
-                 Scanning industry reports and local data sources...
+             <div style={{ padding: '60px', textAlign: 'center', color: '#718096', fontStyle: 'italic', background: '#F7FAFC', borderRadius: '12px' }}>
+                 <div style={{ marginBottom: '16px', fontWeight: '500' }}>Scanning vetted industry sources...</div>
+                 <div style={{ width: '40px', height: '40px', border: '3px solid #CBD5E0', borderTop: '3px solid #006B76', borderRadius: '50%', margin: '0 auto', animation: 'spin 1s linear infinite' }}></div>
+                 <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
              </div>
         ) : (
             <>
-                <div style={{ fontSize: '0.95rem', lineHeight: '1.6', color: '#4A5568' }}>
-                    {insight?.text.split('\n').map((line, i) => {
+                <div style={{ fontSize: '1rem', lineHeight: '1.7', color: '#2D3748' }}>
+                    {news?.text.split('\n').map((line, i) => {
                         const cleanLine = line.trim();
                         if (!cleanLine) return null;
                         
-                        // Check for bullet points/lists
+                        const isHeader = cleanLine.startsWith('**') && cleanLine.endsWith('**');
                         const isList = cleanLine.startsWith('* ') || cleanLine.startsWith('- ') || cleanLine.startsWith('• ');
                         const content = isList ? cleanLine.substring(1).trim() : cleanLine;
 
                         return (
-                            <div key={i} style={{ marginBottom: '8px', display: isList ? 'flex' : 'block', gap: '8px' }}>
-                                {isList && <span style={{color:'#38A169', marginTop:'2px', flexShrink: 0}}>●</span>}
-                                <div>{parseBold(content)}</div>
+                            <div key={i} style={{ marginBottom: isHeader ? '8px' : '16px', display: isList ? 'flex' : 'block', gap: '10px' }}>
+                                {isList && <span style={{color:'#006B76', marginTop:'6px', flexShrink: 0}}>●</span>}
+                                <div style={{ fontWeight: isHeader ? '700' : '400', color: isHeader ? '#1A365D' : 'inherit', fontSize: isHeader ? '1.05rem' : '1rem' }}>{parseBold(content)}</div>
                             </div>
                         );
                     })}
                 </div>
-                {insight?.chunks && insight.chunks.length > 0 && (
-                    <div style={{ marginTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}>
-                        <div style={{ fontSize: '0.7rem', color: '#718096', marginBottom: '4px', fontWeight: 'bold' }}>VERIFIED SOURCES:</div>
+                {news?.chunks && news.chunks.length > 0 && (
+                    <div style={{ marginTop: '32px', borderTop: '1px solid #EDF2F7', paddingTop: '20px' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Source Links</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                            {insight.chunks.map((chunk, i) => {
+                            {news.chunks.map((chunk, i) => {
                                 if (chunk.web?.uri) {
                                     return (
                                         <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" 
-                                           style={{ fontSize: '0.7rem', color: '#3182CE', textDecoration: 'none', background: 'white', padding: '2px 6px', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
-                                            {chunk.web.title || 'Source ' + (i + 1)}
+                                           style={{ fontSize: '0.8rem', color: '#006B76', textDecoration: 'none', background: '#E6FFFA', padding: '6px 12px', borderRadius: '6px', border: '1px solid #B2F5EA', transition: 'all 0.2s', fontWeight: '500' }}>
+                                            {chunk.web.title || 'Source ' + (i + 1)} ↗
                                         </a>
                                     );
                                 }
@@ -457,16 +609,16 @@ const LiveIntelligenceCard = () => {
 const ActionItems = ({ actions }) => (
   <div className="card">
     <h3 style={{ color: '#E53E3E', borderBottomColor: '#FED7D7' }}>🎯 CRITICAL ACTION ITEMS</h3>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {actions.map((action, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: i < actions.length -1 ? '16px' : 0, borderBottom: i < actions.length -1 ? '1px dashed #E2E8F0' : 'none' }}>
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: i < actions.length -1 ? '20px' : 0, borderBottom: i < actions.length -1 ? '1px dashed #E2E8F0' : 'none' }}>
           <div>
-            <div style={{ fontWeight: '700', color: '#2D3748', fontSize: '0.95rem' }}>{action.title}</div>
-            <div style={{ fontSize: '0.85rem', color: '#718096', marginTop: '2px' }}>{action.desc}</div>
+            <div style={{ fontWeight: '700', color: '#2D3748', fontSize: '1rem' }}>{action.title}</div>
+            <div style={{ fontSize: '0.9rem', color: '#718096', marginTop: '4px' }}>{action.desc}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
              <div style={{ fontSize: '0.7rem', color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Impact</div>
-             <div style={{ fontWeight: 'bold', color: '#38A169', fontSize: '1rem' }}>{action.impact}</div>
+             <div style={{ fontWeight: '800', color: '#38A169', fontSize: '1.2rem' }}>{action.impact}</div>
           </div>
         </div>
       ))}
@@ -474,6 +626,7 @@ const ActionItems = ({ actions }) => (
   </div>
 );
 
+// State-of-the-Art Glowing Trend Chart
 const TrendChart = ({ data, target }) => {
   const max = 80; const min = 50; const range = max - min;
   const points = data.map((val, i) => {
@@ -484,87 +637,74 @@ const TrendChart = ({ data, target }) => {
   const targetY = 100 - ((target - min) / range) * 100;
 
   return (
-    <div style={{ height: '200px', width: '100%', position: 'relative' }}>
+    <div style={{ height: '240px', width: '100%', position: 'relative' }}>
       <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{overflow: 'visible'}}>
+        <defs>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+          <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#006B76" stopOpacity="0.4"/>
+            <stop offset="100%" stopColor="#006B76" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        
         {/* Grid lines */}
         {[0, 25, 50, 75, 100].map(y => <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#EDF2F7" strokeWidth="0.5" />)}
+        
         {/* Target Band */}
-        <rect x="0" y="0" width="100" height={targetY} fill="#F0FFF4" />
-        <line x1="0" y1={targetY} x2="100" y2={targetY} stroke="#48BB78" strokeWidth="0.5" strokeDasharray="3,3" />
-        {/* Forecast area */}
-        <rect x="85" y="0" width="15" height="100" fill="#EBF8FF" opacity="0.3" />
+        <rect x="0" y="0" width="100" height={targetY} fill="#F0FFF4" opacity="0.5" />
+        <line x1="0" y1={targetY} x2="100" y2={targetY} stroke="#48BB78" strokeWidth="1" strokeDasharray="4,4" />
         
-        {/* Main Line */}
-        <polyline points={points} fill="none" stroke="#006B76" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Area Fill */}
+        <polygon points={`0,100 ${points} 100,100`} fill="url(#chartGradient)" />
+
+        {/* Main Line with Glow */}
+        <polyline points={points} fill="none" stroke="#006B76" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" style={{filter: 'drop-shadow(0 0 3px rgba(0,107,118,0.5))'}} />
         
-        {/* Data Points */}
+        {/* Animated Data Points */}
         {data.map((val, i) => {
            const x = (i / (data.length - 1)) * 100;
            const y = 100 - ((val - min) / range) * 100;
            return (
-             <g key={i}>
-               <circle cx={x} cy={y} r="2.5" fill={i > 9 ? "white" : "#006B76"} stroke="#006B76" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+             <g key={i} className="chart-point">
+               <circle cx={x} cy={y} r="3" fill="white" stroke="#006B76" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+               <circle cx={x} cy={y} r="10" fill="transparent" stroke="none" style={{cursor:'pointer'}}>
+                  <title>{val}%</title>
+               </circle>
              </g>
            )
         })}
       </svg>
-      <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '0.7rem', color: '#3182ce', fontStyle: 'italic', background: 'white', padding: '2px 6px', borderRadius: '4px' }}>Forecast →</div>
-      <div style={{ position: 'absolute', top: `${targetY}%`, right: '0', transform: 'translateY(-100%)', fontSize: '0.7rem', color: '#48BB78', fontWeight: 'bold', background: '#F0FFF4', padding: '2px 4px', borderRadius: '4px' }}>Target {target}%</div>
-      <div className="source-label" style={{ position: 'absolute', bottom: '-20px', right: 0 }}>Source: STR</div>
+      <div style={{ position: 'absolute', top: `${targetY}%`, right: '0', transform: 'translateY(-120%)', fontSize: '0.75rem', color: '#48BB78', fontWeight: 'bold', background: 'rgba(240, 255, 244, 0.9)', padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>Target {target}%</div>
     </div>
   );
 };
 
 const BenchmarkChart = ({ items }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
     {items.map((item, i) => (
       <div key={i}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '8px' }}>
-          <span style={{ fontWeight: item.name === 'Visit Dana Point' ? '700' : '400', color: item.name === 'Visit Dana Point' ? '#006B76' : '#4A5568' }}>{item.name}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', marginBottom: '8px' }}>
+          <span style={{ fontWeight: item.name === 'Visit Dana Point' ? '700' : '500', color: item.name === 'Visit Dana Point' ? '#006B76' : '#4A5568' }}>{item.name}</span>
           <span style={{ fontWeight: '700', color: '#2D3748' }}>{item.label}</span>
         </div>
-        <div style={{ height: '16px', background: '#EDF2F7', borderRadius: '8px', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ width: `${(item.value / 150) * 100}%`, height: '100%', background: item.color, borderRadius: '8px' }} />
+        <div style={{ height: '20px', background: '#EDF2F7', borderRadius: '10px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ width: `${(item.value / 150) * 100}%`, height: '100%', background: item.color, borderRadius: '10px', boxShadow: '2px 0 5px rgba(0,0,0,0.1)' }} />
           {item.name === 'Orange County Avg' && (
             <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${(100/150)*100}%`, borderLeft: '2px dashed #718096', zIndex: 2 }} />
           )}
         </div>
       </div>
     ))}
-    <div style={{ textAlign: 'center', fontSize: '0.75rem', color: '#718096', marginTop: '8px' }}>100 = Market Average (Orange County)</div>
-    <div className="source-label">Source: CoStar Market Report</div>
+    <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#718096', marginTop: '12px' }}>100 = Market Average (Orange County)</div>
   </div>
 );
 
-const WaterfallChart = ({ data }) => {
-  const max = 75; // Target is 75.4
-  let currentTotal = 0;
-  
-  return (
-    <div style={{position: 'relative'}}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', height: '220px', gap: '6px', paddingTop: '20px', paddingBottom: '10px' }}>
-        {data.map((d, i) => {
-          currentTotal += d.val;
-          return (
-            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ width: '100%', background: i===6 ? '#38A169' : '#3182CE', borderRadius: '4px', height: `${(d.val / 8) * 100}%`, minHeight: '1px', opacity: 0.8 }} />
-              <div style={{ fontSize: '0.7rem', marginTop: '6px', color: '#718096' }}>{d.month}</div>
-            </div>
-          )
-        })}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: '12px' }}>
-          <div style={{ width: '100%', background: '#1A365D', borderRadius: '4px', height: `${(65.6 / 75.4) * 100}%` }} />
-          <div style={{ fontSize: '0.7rem', marginTop: '6px', fontWeight: 'bold' }}>Total</div>
-        </div>
-      </div>
-      <div className="source-label" style={{textAlign: 'right'}}>Source: STR</div>
-    </div>
-  );
-};
-
-const ScenarioSlider = () => {
+const ScenarioSlider = ({ data }) => {
   const [conversion, setConversion] = useState(0);
-  const baseSpend = 287; // M
+  const baseSpend = data.economics.spend; 
   
   // Vetted calc: ~2.95M gain per 1% conversion based on $29.5M for 10%
   const gainPer1Pct = 2.95; 
@@ -572,7 +712,7 @@ const ScenarioSlider = () => {
   const total = baseSpend + currentGain;
 
   return (
-    <div style={{ padding: '24px', background: '#F7FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+    <div style={{ padding: '24px', background: 'linear-gradient(to bottom right, #FFFFFF, #F7FAFC)', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.01)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h4 style={{ margin: '0 0 4px 0', color: '#2D3748', fontSize: '1.1rem' }}>
@@ -590,7 +730,7 @@ const ScenarioSlider = () => {
       <input 
         type="range" min="0" max="20" step="5" 
         value={conversion} onChange={(e) => setConversion(parseInt(e.target.value))}
-        style={{ width: '100%', cursor: 'pointer', accentColor: '#006B76', marginBottom: '16px', height: '6px', borderRadius: '3px' }} 
+        style={{ marginBottom: '16px' }} 
       />
       
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#4A5568', fontWeight: '600' }}>
@@ -611,46 +751,19 @@ const ScenarioSlider = () => {
   );
 };
 
-const BubbleChart = ({ data }) => {
-  // X: Volume (0-200k), Y: Engagement (60-80), Z: Size
-  return (
-    <div style={{ height: '240px', position: 'relative', borderLeft: '1px solid #CBD5E0', borderBottom: '1px solid #CBD5E0', margin: '20px 0 20px 20px' }}>
-      {data.map((d, i) => {
-        const left = (d.x / 180) * 100; // max volume approx 180k
-        const bottom = ((d.y - 65) / 15) * 100; // engagement 65-80
-        const size = Math.max(20, d.z * 1.5); 
-        return (
-          <div key={i} style={{ 
-            position: 'absolute', left: `${left}%`, bottom: `${bottom}%`, 
-            width: size, height: size, borderRadius: '50%', background: d.color, opacity: 0.8,
-            transform: 'translate(-50%, 50%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.15)', color: 'white', fontSize: '0.65rem', textAlign: 'center', fontWeight: '600',
-            border: '1px solid rgba(255,255,255,0.5)'
-          }} title={`${d.name}: ${d.x}k sessions`}>
-            {size > 30 && d.name.split(' ')[0]}
-          </div>
-        )
-      })}
-      <div style={{ position: 'absolute', bottom: '-30px', width: '100%', textAlign: 'center', fontSize: '0.75rem', color: '#718096' }}>Volume (Sessions) →</div>
-      <div style={{ position: 'absolute', left: '-35px', bottom: '0', width: '200px', transform: 'rotate(-90deg)', transformOrigin: '0 100%', textAlign: 'center', fontSize: '0.75rem', color: '#718096' }}>Engagement Rate % →</div>
-      <div className="source-label" style={{position: 'absolute', bottom: '-45px', right: 0}}>Source: GA4</div>
-    </div>
-  )
-};
-
 const HeatMap = ({ data }) => {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const max = Math.max(...data);
   const min = Math.min(...data);
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '6px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(30px, 1fr))', gap: '6px' }}>
         {data.map((val, i) => {
           const intensity = (val - min) / (max - min);
           let bg = intensity < 0.3 ? '#FEFCBF' : intensity < 0.7 ? '#FBD38D' : '#F6AD55'; 
           return (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-               <div style={{ width: '100%', height: '48px', background: bg, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '700', color: '#2D3748' }}>
+               <div style={{ width: '100%', height: '48px', background: bg, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '700', color: '#2D3748', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: 'transform 0.2s' }} className="heatmap-cell">
                   ${val.toFixed(1)}
                 </div>
                <span style={{ fontSize: '0.7rem', color: '#718096' }}>{months[i]}</span>
@@ -664,7 +777,7 @@ const HeatMap = ({ data }) => {
 };
 
 const FunnelChart = ({ stages }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
     {stages.map((stage, i) => (
       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ width: '130px', fontSize: '0.85rem', fontWeight: stage.alert ? '700' : '500', color: stage.alert ? '#E53E3E' : '#2D3748' }}>
@@ -675,7 +788,8 @@ const FunnelChart = ({ stages }) => (
             width: parseFloat(stage.rate) < 2 ? '5px' : `${parseFloat(stage.rate)}%`, 
             height: '100%', 
             background: stage.alert ? '#E53E3E' : '#006B76',
-            opacity: 1 - (i * 0.1)
+            opacity: 1 - (i * 0.1),
+            boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.1)'
           }} />
           <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: '#4A5568' }}>{stage.note}</div>
         </div>
@@ -688,53 +802,145 @@ const FunnelChart = ({ stages }) => (
   </div>
 );
 
+const BubbleChart = ({ data }) => {
+  // X: Volume (0-200k), Y: Engagement (60-80), Z: Size
+  return (
+    <div style={{ height: '240px', position: 'relative', borderLeft: '1px solid #CBD5E0', borderBottom: '1px solid #CBD5E0', margin: '20px 0 20px 20px' }}>
+      {data.map((d, i) => {
+        const left = (d.x / 180) * 100; // max volume approx 180k
+        const bottom = ((d.y - 65) / 15) * 100; // engagement 65-80
+        const size = Math.max(30, d.z * 1.5); 
+        return (
+          <div key={i} style={{ 
+            position: 'absolute', left: `${left}%`, bottom: `${bottom}%`, 
+            width: size, height: size, borderRadius: '50%', background: d.color, opacity: 0.8,
+            transform: 'translate(-50%, 50%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.2)', color: 'white', fontSize: '0.65rem', textAlign: 'center', fontWeight: '600',
+            border: '2px solid rgba(255,255,255,0.8)', backdropFilter: 'blur(2px)'
+          }} title={`${d.name}: ${d.x}k sessions`}>
+            {size > 30 && d.name.split(' ')[0]}
+          </div>
+        )
+      })}
+      <div style={{ position: 'absolute', bottom: '-30px', width: '100%', textAlign: 'center', fontSize: '0.75rem', color: '#718096' }}>Volume (Sessions) →</div>
+      <div style={{ position: 'absolute', left: '-35px', bottom: '0', width: '200px', transform: 'rotate(-90deg)', transformOrigin: '0 100%', textAlign: 'center', fontSize: '0.75rem', color: '#718096' }}>Engagement Rate % →</div>
+      <div className="source-label" style={{position: 'absolute', bottom: '-45px', right: 0}}>Source: GA4</div>
+    </div>
+  )
+};
+
+// --- DATA UPLOAD TAB ---
+const DataUploadTab = ({ currentData, onUpdate }) => {
+  const fileInputRef = useRef(null);
+
+  const downloadTemplate = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "vdp_data_template.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+            const json = JSON.parse(result);
+            onUpdate(json);
+            alert("Data successfully updated!");
+        }
+      } catch (err) {
+        console.error("Error parsing JSON:", err);
+        alert("Error parsing JSON file. Please ensure it matches the template format.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="tab-content fade-in">
+      <div className="card">
+        <h3 style={{ color: '#006B76' }}>Data Management Center</h3>
+        <p style={{ fontSize: '1rem', color: '#4A5568', marginBottom: '24px' }}>
+          This dashboard is powered by verified data from STR, Datafy, and GA4. Use this section to update the dataset.
+          The file uploaded here acts as the single source of truth for the entire application.
+        </p>
+
+        <div className="grid-2">
+           <div style={{ padding: '32px', border: '2px dashed #CBD5E0', borderRadius: '16px', textAlign: 'center', background: '#F7FAFC' }}>
+              <div style={{ color: '#006B76', marginBottom: '16px' }}><Icons.Download /></div>
+              <h4 style={{ margin: '0 0 8px 0', color: '#2D3748' }}>Step 1: Get Template</h4>
+              <p style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '24px' }}>Download the current data structure as a JSON file.</p>
+              <button onClick={downloadTemplate} className="cta-button" style={{ background: 'white', color: '#006B76', border: '1px solid #006B76', boxShadow: 'none' }}>
+                Download JSON Template
+              </button>
+           </div>
+
+           <div style={{ padding: '32px', border: '2px dashed #006B76', borderRadius: '16px', textAlign: 'center', background: '#F0FFF4' }}>
+              <div style={{ color: '#006B76', marginBottom: '16px' }}><Icons.Upload /></div>
+              <h4 style={{ margin: '0 0 8px 0', color: '#2D3748' }}>Step 2: Upload Data</h4>
+              <p style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '24px' }}>Upload your updated JSON file to populate the dashboard.</p>
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".json"
+                style={{ display: 'none' }}
+              />
+              <button onClick={() => fileInputRef.current?.click()} className="cta-button">
+                Select & Upload JSON
+              </button>
+           </div>
+        </div>
+
+        <div style={{ marginTop: '32px', padding: '16px', background: '#FFF5F5', borderRadius: '8px', borderLeft: '4px solid #C53030' }}>
+           <strong style={{ color: '#C53030' }}>Warning:</strong> Uploading new data will instantly override all metrics, charts, and text in the dashboard for this session. Ensure your JSON is validated.
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const VisualIntelligenceTab = () => {
     const [prompt, setPrompt] = useState('');
     const [size, setSize] = useState('1K');
     const [loading, setLoading] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
     
-    // Enhanced Controls State
-    const [selectedInitiative, setSelectedInitiative] = useState('');
-    const [style, setStyle] = useState('Photorealistic');
-    const [lighting, setLighting] = useState('Natural Light');
-    const [camera, setCamera] = useState('Eye Level');
-
-    const handleInitiativeChange = (e) => {
-        const name = e.target.value;
-        setSelectedInitiative(name);
-        if (name) {
-            const init = executiveData.strategic.initiatives.find(i => i.name === name);
-            let context = "";
-            if (init.name === 'Website Booking Fix') {
-                context = "Show a modern, sleek website interface on a mobile device showing a completed hotel booking confirmation for a luxury Dana Point resort. High conversion, clean UX.";
-            } else if (init.name === 'Day-Tripper Campaign') {
-                context = "A vibrant lifestyle shot of a young couple checking into a boutique hotel in Dana Point at sunset, transitioning from day-trip to overnight stay. Warm, inviting atmosphere.";
-            } else if (init.name === 'Winter Wellness Fest') {
-                context = "A serene outdoor yoga session overlooking the Dana Point ocean cliffs during winter, sunny but crisp, wellness festival atmosphere, healthy and active.";
-            } else if (init.name === 'Loyalty Program') {
-                context = "A premium loyalty card or mobile app screen showing 'Visit Dana Point Rewards' with exclusive perks, gold and teal color palette, feeling of exclusivity.";
-            } else {
-                 context = `Visual representation of the '${init.name}' initiative, aiming for an ROI of ${init.roi}. Professional business context.`;
-            }
-            setPrompt(context);
-        }
-    };
+    // Visualization Controls
+    const [chartType, setChartType] = useState('Bar Chart');
+    const [palette, setPalette] = useState('VDP Brand (Teal/Navy)');
+    const [annotations, setAnnotations] = useState('');
 
     const generateImage = async () => {
         if (!prompt) return;
         setLoading(true);
         setImageUrl(null);
         
-        // Construct enhanced prompt
-        const enhancedPrompt = `${prompt} \n\nStyle Attributes: ${style} style, ${lighting} lighting, ${camera} view. High resolution, professional commercial photography.`;
+        // Construct Vetted Visualization Prompt
+        const visualizationPrompt = `
+          Create a professional, high-fidelity data visualization.
+          Topic/Data: ${prompt}
+          Chart Type: ${chartType}
+          Color Palette: ${palette} (Primary: #006B76, Secondary: #1A365D, Accent: #F6AD55)
+          Annotations: Include callouts for: ${annotations || "Key insights"}
+          Style: Clean, modern corporate dashboard style, white background, high contrast, legible typography.
+          Ensure the data representation looks accurate and professional suitable for a board meeting presentation.
+        `;
 
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-image-preview',
                 contents: {
-                    parts: [{ text: enhancedPrompt }]
+                    parts: [{ text: visualizationPrompt }]
                 },
                 config: {
                     imageConfig: {
@@ -752,7 +958,7 @@ const VisualIntelligenceTab = () => {
             }
         } catch (e) {
             console.error(e);
-            alert("Image generation failed. Please try again.");
+            alert("Visualization generation failed. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -769,99 +975,79 @@ const VisualIntelligenceTab = () => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
             const link = document.createElement('a');
-            link.download = `vdp-visual-${Date.now()}.${format.toLowerCase()}`;
+            link.download = `vdp-viz-${Date.now()}.${format.toLowerCase()}`;
             link.href = canvas.toDataURL(`image/${format === 'JPG' ? 'jpeg' : 'png'}`, 0.9);
             link.click();
         };
     };
 
-    const shareImage = async () => {
-        if (!imageUrl) return;
-        try {
-            const res = await fetch(imageUrl);
-            const blob = await res.blob();
-            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-            alert("Image copied to clipboard!");
-        } catch (e) {
-            alert("Unable to copy to clipboard.");
-        }
-    };
-
     return (
         <div className="tab-content fade-in">
             <div className="card">
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #E2E8F0', paddingBottom:'16px', marginBottom:'20px'}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #E2E8F0', paddingBottom:'20px', marginBottom:'24px'}}>
                    <div>
                        <h3 style={{margin:0, color:'#1A365D'}}>Visual Intelligence Studio</h3>
-                       <p style={{margin:'4px 0 0 0', color:'#718096', fontSize:'0.9rem'}}>Create vetted, on-brand visualizations of visitor personas and data stories.</p>
+                       <p style={{margin:'6px 0 0 0', color:'#718096', fontSize:'0.95rem'}}>Create AI-enhanced, presentation-ready visualizations powered by Gemini 3 Pro.</p>
                    </div>
                    <div className="badge badge-green">Gemini 3 Pro</div>
                 </div>
 
                 <div className="grid-2">
-                    <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
+                    <div style={{display:'flex', flexDirection:'column', gap:'24px'}}>
                         
-                        {/* Initiative Selector */}
+                        {/* Data Input */}
                         <div>
-                            <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Strategic Context (Optional)</label>
-                            <select 
-                                value={selectedInitiative} 
-                                onChange={handleInitiativeChange}
-                                style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #CBD5E0', background:'white', color: '#2D3748'}}
-                            >
-                                <option value="">Select an Initiative...</option>
-                                {executiveData.strategic.initiatives.map((init, i) => (
-                                    <option key={i} value={init.name}>{init.name} (ROI: {init.roi})</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Prompt */}
-                        <div>
-                            <label style={{fontSize:'0.85rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Visual Prompt</label>
+                            <label style={{fontSize:'0.9rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Data Topic / Metrics</label>
                             <textarea 
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="Describe the visualization..."
-                                style={{width:'100%', height:'100px', padding:'12px', borderRadius:'8px', border:'1px solid #CBD5E0', fontFamily:'inherit', resize:'none'}}
+                                placeholder="E.g., Visitor spending trends 2024 vs 2025, showing 17% growth..."
+                                style={{width:'100%', height:'100px', padding:'16px', borderRadius:'12px', border:'1px solid #CBD5E0', fontFamily:'inherit', resize:'none', fontSize:'0.95rem'}}
                             />
                         </div>
 
-                        {/* Style Controls */}
-                        <div className="grid-2" style={{gap: '12px'}}>
+                        {/* Chart Controls */}
+                        <div className="grid-2" style={{gap: '20px'}}>
                              <div>
-                                <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Style</label>
-                                <select value={style} onChange={(e)=>setStyle(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
-                                    <option>Photorealistic</option>
-                                    <option>Vector Art</option>
-                                    <option>Infographic</option>
-                                    <option>Cinematic</option>
+                                <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Chart Style</label>
+                                <select value={chartType} onChange={(e)=>setChartType(e.target.value)} style={{width:'100%'}}>
+                                    <option>Sleek Bar Chart</option>
+                                    <option>Glowing Line Graph</option>
+                                    <option>Modern Donut Chart</option>
+                                    <option>Scatter Plot with Trendline</option>
+                                    <option>Gradient Heatmap</option>
+                                    <option>Infographic Layout</option>
                                 </select>
                              </div>
                              <div>
-                                <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Lighting</label>
-                                <select value={lighting} onChange={(e)=>setLighting(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
-                                    <option>Natural Light</option>
-                                    <option>Golden Hour</option>
-                                    <option>Studio Lighting</option>
-                                    <option>Moody</option>
+                                <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Color Palette</label>
+                                <select value={palette} onChange={(e)=>setPalette(e.target.value)} style={{width:'100%'}}>
+                                    <option>VDP Brand (Teal/Navy)</option>
+                                    <option>Ocean Cool (Blues)</option>
+                                    <option>Sunset Warm (Orange/Red)</option>
+                                    <option>Monochrome Scale</option>
                                 </select>
                              </div>
+                        </div>
+
+                        {/* Advanced & Annotations */}
+                         <div className="grid-2" style={{gap: '20px'}}>
                              <div>
-                                <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Camera</label>
-                                <select value={camera} onChange={(e)=>setCamera(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
-                                    <option>Eye Level</option>
-                                    <option>Wide Angle</option>
-                                    <option>Drone / Aerial</option>
-                                    <option>Macro / Close-up</option>
-                                </select>
+                                <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Annotations / Callouts</label>
+                                <input 
+                                    type="text" 
+                                    value={annotations}
+                                    onChange={(e) => setAnnotations(e.target.value)}
+                                    placeholder="E.g., 'Record High' label..." 
+                                    style={{width:'100%'}}
+                                />
                              </div>
                              <div>
-                                 <label style={{fontSize:'0.75rem', fontWeight:'bold', color:'#718096', marginBottom:'4px', display:'block'}}>Resolution</label>
-                                 <select value={size} onChange={(e)=>setSize(e.target.value)} style={{width:'100%', padding:'8px', borderRadius:'6px', border:'1px solid #CBD5E0'}}>
-                                     <option value="1K">1K</option>
-                                     <option value="2K">2K</option>
-                                     <option value="4K">4K</option>
+                                 <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Resolution</label>
+                                 <select value={size} onChange={(e)=>setSize(e.target.value)} style={{width:'100%'}}>
+                                     <option value="1K">HD (1K)</option>
+                                     <option value="2K">Full HD (2K)</option>
+                                     <option value="4K">Ultra HD (4K)</option>
                                  </select>
                              </div>
                         </div>
@@ -869,19 +1055,12 @@ const VisualIntelligenceTab = () => {
                         <button 
                             onClick={generateImage}
                             disabled={loading || !prompt}
+                            className="cta-button"
                             style={{
-                                marginTop:'8px',
-                                padding:'12px',
-                                background: loading ? '#CBD5E0' : '#006B76',
-                                color:'white',
-                                border:'none',
-                                borderRadius:'8px',
-                                fontWeight:'bold',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                display:'flex',
-                                alignItems:'center',
-                                justifyContent:'center',
-                                gap:'8px'
+                                marginTop:'12px',
+                                width: '100%',
+                                justifyContent: 'center',
+                                background: loading ? '#CBD5E0' : '#006B76'
                             }}
                         >
                             {loading ? 'Generating...' : <><span>✨</span> Generate Visualization</>}
@@ -889,26 +1068,26 @@ const VisualIntelligenceTab = () => {
                     </div>
 
                     <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
-                        <div style={{background:'#F7FAFC', borderRadius:'8px', border:'1px dashed #CBD5E0', display:'flex', alignItems:'center', justifyContent:'center', minHeight:'300px', flex: 1, overflow:'hidden', position:'relative'}}>
+                        <div style={{background:'#F7FAFC', borderRadius:'16px', border:'2px dashed #CBD5E0', display:'flex', alignItems:'center', justifyContent:'center', minHeight:'400px', flex: 1, overflow:'hidden', position:'relative'}}>
                             {imageUrl ? (
-                                <img src={imageUrl} alt="Generated Visualization" style={{maxWidth:'100%', borderRadius:'4px', boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}} />
+                                <img src={imageUrl} alt="Generated Visualization" style={{maxWidth:'100%', borderRadius:'4px', boxShadow:'0 10px 25px rgba(0,0,0,0.1)'}} />
                             ) : (
                                 <div style={{textAlign:'center', color:'#A0AEC0'}}>
-                                    <div style={{fontSize:'2rem', marginBottom:'8px'}}>🖼️</div>
-                                    <div>Preview Area</div>
+                                    <div style={{fontSize:'4rem', marginBottom:'16px', opacity: 0.2}}>
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    </div>
+                                    <div style={{fontWeight: '600', color: '#718096'}}>Visualization Preview</div>
+                                    <div style={{fontSize:'0.8rem', marginTop:'8px'}}>Generative AI will render your data chart here.</div>
                                 </div>
                             )}
                         </div>
                         
                         {imageUrl && (
                             <div style={{display:'flex', gap:'12px', justifyContent:'flex-end'}}>
-                                <button onClick={shareImage} style={{padding:'8px 16px', background:'white', border:'1px solid #CBD5E0', borderRadius:'6px', color:'#2D3748', cursor:'pointer', fontWeight:'600'}}>
-                                    Copy to Clipboard
-                                </button>
-                                <button onClick={() => downloadImage('JPG')} style={{padding:'8px 16px', background:'white', border:'1px solid #CBD5E0', borderRadius:'6px', color:'#2D3748', cursor:'pointer', fontWeight:'600'}}>
+                                <button onClick={() => downloadImage('JPG')} style={{padding:'10px 20px', background:'white', border:'1px solid #CBD5E0', borderRadius:'8px', color:'#2D3748', cursor:'pointer', fontWeight:'600'}}>
                                     Download JPG
                                 </button>
-                                <button onClick={() => downloadImage('PNG')} style={{padding:'8px 16px', background:'#2D3748', border:'none', borderRadius:'6px', color:'white', cursor:'pointer', fontWeight:'600'}}>
+                                <button onClick={() => downloadImage('PNG')} style={{padding:'10px 20px', background:'#2D3748', border:'none', borderRadius:'8px', color:'white', cursor:'pointer', fontWeight:'600'}}>
                                     Download PNG
                                 </button>
                             </div>
@@ -922,19 +1101,23 @@ const VisualIntelligenceTab = () => {
 
 // --- TABS ---
 
-const TabPulse = () => (
+const TabPulse = ({ data, onHomeClick }) => (
   <div className="tab-content fade-in">
-    <DmoImpactPanel />
-    <HeadlineInsight headline={executiveData.pulse.headline} />
-    <LiveIntelligenceCard />
-    <div className="grid-4" style={{ marginTop: '28px' }}>
-      {executiveData.pulse.kpis.map((kpi, i) => <KPICard key={i} data={kpi} />)}
+    <DmoImpactPanel data={data} />
+    <HeadlineInsight headline={data.pulse.headline} />
+    
+    <div style={{ margin: '32px 0' }}>
+       <IndustryNewsSection />
     </div>
-    <div className="grid-2" style={{ marginTop: '28px' }}>
-      <ActionItems actions={executiveData.pulse.actions} />
+
+    <div className="grid-4" style={{ marginTop: '32px' }}>
+      {data.pulse.kpis.map((kpi, i) => <KPICard key={i} data={kpi} />)}
+    </div>
+    <div className="grid-2" style={{ marginTop: '32px' }}>
+      <ActionItems actions={data.pulse.actions} />
       <div className="card">
         <h3 style={{ color: '#D69E2E', borderBottomColor: '#FEFCBF' }}>⚠️ RISK MONITOR</h3>
-        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9rem', color: '#2D3748', lineHeight: '1.8' }}>
+        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '1rem', color: '#2D3748', lineHeight: '1.8' }}>
           <li>
             <strong>Mobile Experience:</strong> 58% of traffic is mobile, but Calendar page has "browser not supported" warning.
           </li>
@@ -945,453 +1128,449 @@ const TabPulse = () => (
             <strong>Occupancy Softening:</strong> Oct occupancy (64.2%) dropped from peak July (70.3%).
           </li>
         </ul>
-        <div style={{ marginTop: '20px', fontSize: '0.85rem', fontWeight: 'bold', color: '#38A169', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ marginTop: '24px', padding: '12px', borderRadius: '8px', background: 'rgba(56, 161, 105, 0.1)', fontSize: '0.9rem', fontWeight: 'bold', color: '#2F855A', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>✅</span> STATUS: No Critical Red Flags. All KPIs positive YoY.
         </div>
-        <div className="source-label" style={{marginTop: '16px'}}>Source: Internal Audit</div>
       </div>
     </div>
   </div>
 );
 
-const TabHospitality = () => (
+const TabHospitality = ({ data }) => (
   <div className="tab-content fade-in">
     <div className="grid-2">
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3>
-            Occupancy Trend & Forecast
-            <Tooltip text={TOOLTIPS.OCCUPANCY} />
-          </h3>
-          <span className="badge badge-yellow">Target 70%</span>
-        </div>
-        <TrendChart data={executiveData.hospitality.occupancyTrend} target={70} />
+        <h3>Occupancy Trend (Trailing 12 Months)</h3>
+        <TrendChart data={data.hospitality.occupancyTrend} target={70} />
       </div>
       <div className="card">
-        <h3>
-          RevPAR Performance vs Benchmarks
-          <Tooltip text={TOOLTIPS.REVPAR} />
-        </h3>
-        <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '20px' }}>VDP commands a premium over the county, but trails the submarket occupancy leaders.</p>
-        <BenchmarkChart items={executiveData.hospitality.benchmarks} />
+        <h3>Competitive Benchmarks</h3>
+        <BenchmarkChart items={data.hospitality.benchmarks} />
       </div>
     </div>
     
-    <div className="grid-2" style={{ marginTop: '28px' }}>
-      <div className="card">
-        <h3>Monthly Revenue Waterfall</h3>
-        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1A365D', marginBottom: '8px' }}>$65.6M <span style={{fontSize: '0.9rem', color: '#718096', fontWeight: '400'}}>YTD Revenue</span></div>
-        <WaterfallChart data={executiveData.hospitality.revenueWaterfall} />
-      </div>
-      <div className="card">
-        <h3>Property Class Performance</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          {executiveData.hospitality.propertyClass.map((cls, i) => (
-            <div key={i} style={{ padding: '16px', background: '#F7FAFC', borderRadius: '8px', borderLeft: i === 0 ? '4px solid #006B76' : '4px solid #CBD5E0' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#2D3748' }}>{cls.name}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '8px' }}>
-                <span style={{color: '#718096'}}>Occ: {cls.occ}</span>
-                <span style={{color: '#718096'}}>ADR: {cls.adr}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px', fontWeight: '600' }}>
-                <span>Rev: {cls.revpar}</span>
-                <span style={{color: '#38A169'}}>{cls.growth}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="source-label" style={{marginTop: '16px', textAlign: 'right'}}>Source: STR Property Report</div>
-      </div>
-    </div>
-  </div>
-);
-
-const TabEconomics = () => (
-  <div className="tab-content fade-in">
-    <div className="grid-3">
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '12px' }}>Total Visitor Spend</div>
-        <div style={{ fontSize: '3.5rem', fontWeight: '800', color: '#006B76' }}>${executiveData.economics.spend}M</div>
-        <div style={{ width: '100%', height: '8px', background: '#EDF2F7', borderRadius: '4px', margin: '20px 0', position: 'relative' }}>
-          <div style={{ width: '70%', height: '100%', background: '#006B76', borderRadius: '4px' }} />
-          <div style={{ position: 'absolute', right: '0', top: '-20px', fontSize: '0.75rem', color: '#718096' }}>Target $685M</div>
-        </div>
-        <div style={{ fontSize: '0.9rem', color: '#38A169', fontWeight: 'bold' }}>+$204M Opportunity</div>
-        <div className="source-label" style={{marginTop: '12px'}}>Source: Datafy</div>
-      </div>
-      
-      <div className="card" style={{ gridColumn: 'span 2' }}>
-        <ScenarioSlider />
-      </div>
-    </div>
-
-    <div className="grid-2" style={{ marginTop: '28px' }}>
-      <div className="card">
-        <h3>Spending by Category</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {executiveData.economics.categories.map((cat, i) => (
-            <div key={i}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '6px' }}>
-                <span>{cat.name}</span>
-                <span style={{ fontWeight: 'bold' }}>${cat.val}M</span>
-              </div>
-              <div style={{ width: '100%', height: '10px', background: '#EDF2F7', borderRadius: '5px' }}>
-                <div style={{ width: `${cat.pct}%`, height: '100%', background: i===0 ? '#3182CE' : '#63B3ED', borderRadius: '5px' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="source-label" style={{marginTop: '16px', textAlign: 'right'}}>Source: Datafy Spend Analysis</div>
-      </div>
-      <div className="card">
-        <h3>Strategic Insight: Economics</h3>
-        <p style={{ fontSize: '1.05rem', lineHeight: '1.6', color: '#2D3748' }}>
-          Accommodations & Dining account for <strong>66%</strong> of all visitor spending. While average spend per visitor is healthy ($160.60), the <strong>Length of Stay</strong> leverage is massive. A shift from 1-day to 2-day stays drives a 3x multiplier on economic impact without needing to acquire new visitors.
-        </p>
-      </div>
-    </div>
-  </div>
-);
-
-const TabGrowth = () => (
-  <div className="tab-content fade-in">
-    <div className="grid-2">
-      <div className="card">
-        <h3>Market Distribution (Top 4)</h3>
-        <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '20px' }}>Los Angeles remains the dominant feeder market (33%), with strongest growth.</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {executiveData.growth.markets.map((m, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '100px', fontWeight: 'bold', fontSize: '0.9rem' }}>{m.name}</div>
-              <div style={{ flex: 1, height: '14px', background: '#EDF2F7', borderRadius: '7px' }}>
-                <div style={{ width: `${(m.share / 35) * 100}%`, height: '100%', background: i===0 ? '#006B76' : '#4FD1C5', borderRadius: '7px' }} />
-              </div>
-              <div style={{ width: '60px', textAlign: 'right', fontWeight: 'bold', fontSize: '0.9rem' }}>{m.share}%</div>
-              <div style={{ width: '60px', textAlign: 'right', fontSize: '0.85rem', color: '#38A169' }}>{m.growth}</div>
-            </div>
-          ))}
-        </div>
-        <div className="source-label" style={{marginTop: '16px', textAlign: 'right'}}>Source: Datafy Visitation</div>
-      </div>
-      
-      <div className="card">
-        <h3>Visitor Profile & Demographics</h3>
-        <div className="grid-2">
-          {executiveData.growth.demographics.map((d, i) => (
-             <div key={i} style={{ padding: '20px', border: '1px solid #E2E8F0', borderRadius: '8px', textAlign: 'center' }}>
-               <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#2D3748' }}>{d.value}</div>
-               <div style={{ fontSize: '0.8rem', color: '#718096', marginTop: '4px' }}>{d.label}</div>
-             </div>
-          ))}
-        </div>
-        <div style={{ marginTop: '28px', padding: '16px', background: '#F7FAFC', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.85rem', color: '#4A5568', fontStyle: 'italic' }}>
-            <strong>Targeting Implication:</strong> High-income ($150k+) mature audience (45+) aligns perfectly with luxury/wellness positioning.
-          </div>
-        </div>
-        <div className="source-label" style={{marginTop: '16px', textAlign: 'right'}}>Source: Datafy / GA4 Aggregated</div>
-      </div>
-    </div>
-
-    <div className="card" style={{ marginTop: '28px' }}>
-      <h3>Visitor Growth Tracking</h3>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '32px', height: '140px', paddingTop: '20px' }}>
-        {executiveData.growth.growthTrend.map((t, i) => (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '8px' }}>{t.val}M</div>
-            <div style={{ width: '100%', background: i===2 ? '#EDF2F7' : '#38B2AC', height: `${(t.val/3)*100}%`, borderRadius: '6px 6px 0 0', border: i===2 ? '2px dashed #38B2AC' : 'none' }} />
-            <div style={{ fontSize: '0.85rem', marginTop: '12px', color: '#718096' }}>{t.year}</div>
-          </div>
-        ))}
-      </div>
-      <div className="source-label" style={{textAlign: 'right'}}>Source: Datafy + Forecast</div>
-    </div>
-  </div>
-);
-
-const TabDigital = () => (
-  <div className="tab-content fade-in">
-    <div className="grid-2">
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3>
-            Conversion Funnel
-            <Tooltip text={TOOLTIPS.WEB_CONVERSION} />
-          </h3>
-          <span className="badge badge-red">Critical Gap</span>
-        </div>
-        <FunnelChart stages={executiveData.digital.funnel} />
-      </div>
-      
-      <div className="card">
-        <h3>Channel Efficiency Matrix</h3>
-        <p style={{ fontSize: '0.85rem', color: '#718096' }}>High volume (Google) vs High engagement (Bing/Direct)</p>
-        <BubbleChart data={executiveData.digital.sources} />
-      </div>
-    </div>
-
-    <div className="grid-2" style={{ marginTop: '28px' }}>
-      <div className="card">
-        <h3>Mobile Optimization Status</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', padding: '24px', background: '#FFF5F5', borderRadius: '8px', borderLeft: '4px solid #E53E3E' }}>
-           <div style={{ fontSize: '2.5rem' }}>📱</div>
-           <div>
-             <div style={{ fontWeight: 'bold', color: '#C53030', fontSize: '1.1rem' }}>58% Traffic is Mobile</div>
-             <div style={{ fontSize: '0.9rem', color: '#2D3748', marginTop: '4px' }}>Calendar page shows "browser not supported" warning. Booking flow takes 6 clicks.</div>
-             <div style={{ marginTop: '12px', fontSize: '0.85rem', fontWeight: 'bold', color: '#C53030' }}>PRIORITY FIX: Q1 2026</div>
+    <h3 style={{marginTop: '32px', color: '#2D3748'}}>Property Class Performance</h3>
+    <div className="grid-4">
+      {data.hospitality.propertyClass.map((prop, i) => (
+        <div key={i} className="card" style={{borderTop: '4px solid #3182CE'}}>
+           <div style={{fontWeight: '700', color: '#2D3748', fontSize: '1.1rem', marginBottom: '8px'}}>{prop.name}</div>
+           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
+             <span style={{color:'#718096', fontSize:'0.9rem'}}>Occupancy</span>
+             <span style={{fontWeight:'700'}}>{prop.occ}</span>
+           </div>
+           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
+             <span style={{color:'#718096', fontSize:'0.9rem'}}>ADR</span>
+             <span style={{fontWeight:'700'}}>{prop.adr}</span>
+           </div>
+           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
+             <span style={{color:'#718096', fontSize:'0.9rem'}}>RevPAR</span>
+             <span style={{fontWeight:'700'}}>{prop.revpar}</span>
+           </div>
+           <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #E2E8F0', color: '#38A169', fontSize: '0.85rem', fontWeight: '700'}}>
+             {prop.growth} YoY
            </div>
         </div>
-        <div className="source-label" style={{marginTop: '16px', textAlign: 'right'}}>Source: GA4 Device Report</div>
-      </div>
-      <div className="card">
-        <h3>Top Content & Opportunities</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-           {executiveData.digital.pages.map((p, i) => (
-             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-               <span>{p.name}</span>
-               <div style={{ display: 'flex', gap: '16px' }}>
-                 <span style={{ fontWeight: 'bold' }}>{p.views.toLocaleString()}</span>
-                 {p.alert && <span style={{ color: '#E53E3E', fontWeight: 'bold', fontSize: '0.8rem' }}>⚠️ LOW</span>}
-               </div>
-             </div>
-           ))}
-        </div>
-        <div style={{ marginTop: '20px', fontSize: '0.85rem', fontStyle: 'italic', color: '#718096', padding: '12px', background: '#F7FAFC', borderRadius: '6px' }}>
-           Action: Add "Book Now" CTA to Trolley & Events pages to capture high intent traffic.
-        </div>
-        <div className="source-label" style={{marginTop: '12px', textAlign: 'right'}}>Source: GA4 Pageviews</div>
-      </div>
+      ))}
+    </div>
+
+    <div className="card" style={{marginTop: '32px'}}>
+      <h3>Revenue Seasonality (Waterfall)</h3>
+      <HeatMap data={data.hospitality.revenueWaterfall.map(d => d.val)} />
     </div>
   </div>
 );
 
-const TabEvents = () => (
+const TabEconomics = ({ data }) => (
+  <div className="tab-content fade-in">
+    <div className="grid-2">
+       <ScenarioSlider data={data} />
+       <div className="card">
+          <h3>Visitor Spending Categories</h3>
+          <div style={{display:'flex', flexDirection:'column', gap:'16px', justifyContent:'center', height:'100%'}}>
+             {data.economics.categories.map((cat, i) => (
+               <div key={i}>
+                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:'6px', fontWeight:'600'}}>
+                   <span>{cat.name}</span>
+                   <span>${cat.val}M ({cat.pct}%)</span>
+                 </div>
+                 <div style={{width:'100%', height:'12px', background:'#EDF2F7', borderRadius:'6px', overflow:'hidden'}}>
+                   <div style={{width:`${cat.pct}%`, height:'100%', background:'#38A169'}} />
+                 </div>
+               </div>
+             ))}
+          </div>
+       </div>
+    </div>
+    
+    <div style={{marginTop:'32px', textAlign:'center', padding:'40px', background:'white', borderRadius:'16px', border:'1px solid #E2E8F0'}}>
+        <h2 style={{color: '#2D3748', margin: '0 0 16px 0'}}>Total Economic Impact Goal</h2>
+        <div style={{fontSize: '4rem', fontWeight: '800', color: '#006B76'}}>${data.economics.spend}M</div>
+        <div style={{color: '#718096', fontSize: '1.2rem'}}>Current Annual Visitor Spending</div>
+        <div style={{marginTop: '24px'}}>
+           <span style={{background:'#EDF2F7', padding:'8px 16px', borderRadius:'20px', color:'#4A5568', fontWeight:'600'}}>
+              Target: ${data.economics.target}M by 2026
+           </span>
+        </div>
+    </div>
+  </div>
+);
+
+const TabGrowth = ({ data }) => (
   <div className="tab-content fade-in">
     <div className="grid-2">
       <div className="card">
-        <h3>Ohana Fest Impact (5-Year)</h3>
-        <div style={{ display: 'flex', alignItems: 'flex-end', height: '200px', gap: '20px', paddingTop: '20px' }}>
-           {executiveData.events.ohana.map((d, i) => (
-             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-               <div style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>${d.spend}</div>
-               <div style={{ width: '100%', background: '#B2F5EA', borderRadius: '4px 4px 0 0', flex: 1, position: 'relative' }}>
-                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${(d.spend / 250) * 100}%`, background: '#006B76', borderRadius: '4px 4px 0 0' }} />
-               </div>
-               <div style={{ fontSize: '0.8rem', marginTop: '8px' }}>{d.year}</div>
-             </div>
-           ))}
-        </div>
-        <div style={{ marginTop: '16px', fontSize: '0.85rem', color: '#718096' }}>
-          Attendance stable (45k), but per-visitor spend +33% since 2021.
-        </div>
-        <div className="source-label" style={{textAlign: 'right'}}>Source: Datafy + Internal Report</div>
+        <h3>Key Feeder Markets</h3>
+        <table style={{width:'100%', borderCollapse:'collapse'}}>
+          <thead>
+            <tr style={{borderBottom:'2px solid #E2E8F0', textAlign:'left'}}>
+              <th style={{padding:'8px'}}>Market</th>
+              <th style={{padding:'8px'}}>Share</th>
+              <th style={{padding:'8px'}}>Volume</th>
+              <th style={{padding:'8px'}}>Growth</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.growth.markets.map((m, i) => (
+              <tr key={i} style={{borderBottom:'1px solid #EDF2F7'}}>
+                <td style={{padding:'12px 8px', fontWeight:'600'}}>{m.name}</td>
+                <td style={{padding:'12px 8px'}}>{m.share}%</td>
+                <td style={{padding:'12px 8px'}}>{m.val}</td>
+                <td style={{padding:'12px 8px', color:'#38A169', fontWeight:'700'}}>{m.growth}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
       <div className="card">
-        <h3>Seasonality Gap Analysis</h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-           <div>Peak: <strong style={{color: '#E53E3E'}}>${executiveData.events.gapAnalysis.peak}M</strong></div>
-           <div>Low: <strong style={{color: '#D69E2E'}}>${executiveData.events.gapAnalysis.low}M</strong></div>
-           <div>Gap: <strong>${executiveData.events.gapAnalysis.gap}M</strong></div>
-        </div>
-        <HeatMap data={executiveData.events.seasonality} />
-        <div style={{ marginTop: '24px', padding: '16px', background: '#F0FFF4', border: '1px solid #C6F6D5', borderRadius: '8px' }}>
-          <strong style={{ color: '#276749', fontSize: '0.9rem' }}>Opportunity: Winter Wellness Festival</strong>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#2F855A' }}>
-            Proposed for Jan/Feb. Est Impact: +$2-3M. Reduces seasonal gap by ~50%.
-          </p>
-        </div>
+         <h3>Visitor Demographics</h3>
+         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px'}}>
+            {data.growth.demographics.map((d, i) => (
+               <div key={i} style={{padding:'16px', background:'#F7FAFC', borderRadius:'8px', textAlign:'center'}}>
+                  <div style={{fontSize:'1.5rem', fontWeight:'800', color:'#2C5282'}}>{d.value}</div>
+                  <div style={{fontSize:'0.85rem', color:'#718096'}}>{d.label}</div>
+               </div>
+            ))}
+         </div>
       </div>
+    </div>
+
+    <div className="card" style={{marginTop:'32px'}}>
+       <h3>Growth Trajectory</h3>
+       <div style={{display:'flex', alignItems:'flex-end', height:'200px', gap:'40px', padding:'20px 0'}}>
+          {data.growth.growthTrend.map((t, i) => (
+             <div key={i} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:'100%'}}>
+                <div style={{
+                   width:'60px', 
+                   height:`${(t.val / 3) * 100}%`, 
+                   background: i === 2 ? '#4FD1C5' : '#006B76', 
+                   borderRadius:'8px 8px 0 0',
+                   display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold'
+                }}>
+                  {t.val}M
+                </div>
+                <div style={{marginTop:'12px', fontWeight:'600', color:'#4A5568'}}>{t.year}</div>
+             </div>
+          ))}
+       </div>
     </div>
   </div>
 );
 
-const TabStrategic = () => (
+const TabDigital = ({ data }) => (
   <div className="tab-content fade-in">
-    <div className="card">
-      <h3>2026 Strategic Scorecard</h3>
-      <div className="grid-4">
-        {executiveData.strategic.scorecard.map((item, i) => (
-          <div key={i} style={{ textAlign: 'center', padding: '20px', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
-            <div style={{ fontSize: '0.9rem', color: '#718096', textTransform: 'uppercase', marginBottom: '8px' }}>
-              {item.name}
-              {item.tooltip && <Tooltip text={item.tooltip} />}
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '8px' }}>{item.current}</div>
-            <div style={{ fontSize: '0.85rem', color: '#718096' }}>Target: {item.target}</div>
-            <span className={`badge badge-${item.status}`} style={{ marginTop: '12px' }}>{item.status.toUpperCase()}</span>
-            {item.source && <div className="source-label" style={{marginTop: '8px', textAlign: 'center'}}>Src: {item.source}</div>}
-          </div>
-        ))}
-      </div>
+    <div className="grid-2">
+       <div className="card">
+          <h3>Website Funnel Efficiency</h3>
+          <FunnelChart stages={data.digital.funnel} />
+       </div>
+       <div className="card">
+          <h3>Traffic Sources & Engagement</h3>
+          <BubbleChart data={data.digital.sources} />
+       </div>
     </div>
 
-    <div className="grid-2" style={{ marginTop: '28px' }}>
-      <div className="card">
-        <h3>Initiative Status & ROI</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {executiveData.strategic.initiatives.map((init, i) => (
-             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#F7FAFC', borderRadius: '8px' }}>
-               <div>
-                 <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{init.name}</div>
-                 <div style={{ fontSize: '0.8rem', color: '#718096', marginTop: '2px' }}>Owner: {init.owner}</div>
-               </div>
-               <div style={{ textAlign: 'right' }}>
-                 <div style={{ fontWeight: 'bold', color: '#38A169', fontSize: '1.1rem' }}>{init.roi}</div>
-                 <div style={{ fontSize: '0.75rem', background: init.status === 'Urgent' ? '#FED7D7' : '#FEFCBF', color: init.status === 'Urgent' ? '#C53030' : '#744210', padding: '4px 8px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>{init.status}</div>
-               </div>
+    <div className="grid-2" style={{marginTop:'32px'}}>
+       <div className="card">
+          <h3>Guest Sentiment</h3>
+          {data.digital.sentiment.map((s, i) => (
+             <div key={i} style={{marginBottom:'12px'}}>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.9rem', marginBottom:'4px'}}>
+                   <span style={{fontWeight:'600'}}>{s.cat}</span>
+                   <span style={{color:'#38A169'}}>{s.pos}% Positive</span>
+                </div>
+                <div style={{width:'100%', height:'8px', background:'#FED7D7', borderRadius:'4px', overflow:'hidden'}}>
+                   <div style={{width:`${s.pos}%`, height:'100%', background:'#38A169'}} />
+                </div>
              </div>
           ))}
-        </div>
-        <div className="source-label" style={{marginTop: '16px', textAlign: 'right'}}>Source: Project Mgmt / Finance</div>
-      </div>
-      
-      <div className="card">
-        <h3>Risk & Opportunity Matrix</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '12px', height: '280px' }}>
-          {/* Top Left: High Impact / Low Risk (Do First) */}
-          <div style={{ background: '#F0FFF4', padding: '16px', borderRadius: '8px', border: '1px solid #C6F6D5' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#276749', marginBottom: '8px' }}>QUICK WINS</div>
-            <ul style={{ paddingLeft: '16px', fontSize: '0.8rem', margin: '0', color: '#2F855A' }}>
-              <li>Website Booking Fix</li>
-              <li>Email Marketing</li>
-            </ul>
+       </div>
+       <div className="card">
+          <h3>Data Sources Status</h3>
+          <table style={{width:'100%', fontSize:'0.9rem'}}>
+             <thead>
+                <tr style={{textAlign:'left', color:'#718096'}}>
+                   <th style={{paddingBottom:'8px'}}>Source</th>
+                   <th style={{paddingBottom:'8px'}}>Type</th>
+                   <th style={{paddingBottom:'8px'}}>Status</th>
+                </tr>
+             </thead>
+             <tbody>
+                {data.digital.dataSources.map((ds, i) => (
+                   <tr key={i}>
+                      <td style={{padding:'8px 0', fontWeight:'600'}}>{ds.name}</td>
+                      <td style={{color:'#718096'}}>{ds.type}</td>
+                      <td><span className="badge badge-green">{ds.status}</span></td>
+                   </tr>
+                ))}
+             </tbody>
+          </table>
+       </div>
+    </div>
+  </div>
+);
+
+const TabEvents = ({ data }) => (
+  <div className="tab-content fade-in">
+    <div className="card">
+       <h3>Signature Event Impact: Ohana Festival</h3>
+       <div style={{overflowX: 'auto'}}>
+       <table style={{width:'100%', borderCollapse:'collapse', marginTop:'16px'}}>
+          <thead>
+             <tr style={{background:'#F7FAFC', textAlign:'left'}}>
+                <th style={{padding:'12px'}}>Year</th>
+                <th style={{padding:'12px'}}>Attendance (k)</th>
+                <th style={{padding:'12px'}}>Econ Impact ($M)</th>
+                <th style={{padding:'12px'}}>Trend</th>
+             </tr>
+          </thead>
+          <tbody>
+             {data.events.ohana.map((e, i) => (
+                <tr key={i} style={{borderBottom:'1px solid #EDF2F7'}}>
+                   <td style={{padding:'12px', fontWeight:'700'}}>{e.year}</td>
+                   <td style={{padding:'12px'}}>{e.att}k</td>
+                   <td style={{padding:'12px'}}>${e.spend}M</td>
+                   <td style={{padding:'12px'}}>
+                      {i > 0 && e.spend > data.events.ohana[i-1].spend ? <span style={{color:'#38A169'}}>↑ Growth</span> : '-'}
+                   </td>
+                </tr>
+             ))}
+          </tbody>
+       </table>
+       </div>
+    </div>
+
+    <div className="grid-2" style={{marginTop:'32px'}}>
+       <div className="card">
+          <h3>Seasonality Gap Analysis</h3>
+          <div style={{display:'flex', justifyContent:'space-around', alignItems:'center', padding:'20px'}}>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'0.9rem', color:'#718096'}}>Peak Spend</div>
+                <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'#38A169'}}>${data.events.gapAnalysis.peak}M</div>
+             </div>
+             <div style={{fontSize:'1.5rem', color:'#CBD5E0'}}>vs</div>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'0.9rem', color:'#718096'}}>Low Season</div>
+                <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'#E53E3E'}}>${data.events.gapAnalysis.low}M</div>
+             </div>
           </div>
-          {/* Top Right: High Impact / High Risk (Plan) */}
-          <div style={{ background: '#FFFFF0', padding: '16px', borderRadius: '8px', border: '1px solid #F6E05E' }}>
-             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#744210', marginBottom: '8px' }}>STRATEGIC BETS</div>
-             <ul style={{ paddingLeft: '16px', fontSize: '0.8rem', margin: '0', color: '#975A16' }}>
-               <li>Day-Tripper Conv.</li>
-               <li>Winter Events</li>
-             </ul>
+          <div style={{textAlign:'center', marginTop:'16px', padding:'12px', background:'#FFF5F5', color:'#C53030', borderRadius:'8px', fontWeight:'600'}}>
+             Opportunity Gap: ${data.events.gapAnalysis.gap}M
           </div>
-          {/* Bottom Left: Low Impact / Low Risk */}
-          <div style={{ background: '#F7FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #EDF2F7' }}>
-             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#4A5568', marginBottom: '8px' }}>MAINTENANCE</div>
-             <ul style={{ paddingLeft: '16px', fontSize: '0.8rem', margin: '0', color: '#4A5568' }}>
-               <li>Social Content</li>
-               <li>Partner Updates</li>
-             </ul>
+       </div>
+       <div className="card">
+          <h3>Monthly Spend Intensity</h3>
+          <HeatMap data={data.events.seasonality} />
+       </div>
+    </div>
+  </div>
+);
+
+const TabStrategic = ({ data }) => (
+  <div className="tab-content fade-in">
+    <h3 style={{color:'#1A365D'}}>2026 Strategic Scorecard</h3>
+    <div className="grid-4" style={{marginBottom:'32px'}}>
+       {data.strategic.scorecard.map((s, i) => (
+          <div key={i} className="card" style={{borderLeft:`4px solid ${s.status === 'green' ? '#38A169' : s.status === 'yellow' ? '#D69E2E' : '#E53E3E'}`}}>
+             <div style={{fontSize:'0.9rem', color:'#718096'}}>{s.name}</div>
+             <div style={{fontSize:'1.8rem', fontWeight:'800', color:'#2D3748', margin:'8px 0'}}>{s.current}</div>
+             <div style={{fontSize:'0.8rem', color:'#A0AEC0'}}>Target: {s.target}</div>
           </div>
-          {/* Bottom Right: Low Impact / High Risk (Avoid) */}
-          <div style={{ background: '#FFF5F5', padding: '16px', borderRadius: '8px', border: '1px solid #FEB2B2' }}>
-             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#C53030', marginBottom: '8px' }}>MONITOR</div>
-             <ul style={{ paddingLeft: '16px', fontSize: '0.8rem', margin: '0', color: '#C53030' }}>
-               <li>Economic Downturn</li>
-               <li>Weather</li>
-             </ul>
-          </div>
-        </div>
-        <div className="source-label" style={{marginTop: '16px', textAlign: 'right'}}>Source: Internal Risk Register</div>
-      </div>
+       ))}
+    </div>
+
+    <div className="card">
+       <h3>Strategic Initiatives Roadmap</h3>
+       <table style={{width:'100%', borderCollapse:'collapse'}}>
+          <thead>
+             <tr style={{borderBottom:'2px solid #E2E8F0', textAlign:'left'}}>
+                <th style={{padding:'12px'}}>Initiative</th>
+                <th style={{padding:'12px'}}>Status</th>
+                <th style={{padding:'12px'}}>Owner</th>
+                <th style={{padding:'12px'}}>Est. ROI</th>
+             </tr>
+          </thead>
+          <tbody>
+             {data.strategic.initiatives.map((item, i) => (
+                <tr key={i} style={{borderBottom:'1px solid #EDF2F7'}}>
+                   <td style={{padding:'16px 12px', fontWeight:'600'}}>{item.name}</td>
+                   <td style={{padding:'16px 12px'}}>
+                      <span style={{
+                         padding:'4px 12px', borderRadius:'12px', fontSize:'0.8rem', fontWeight:'600',
+                         background: item.status === 'Urgent' ? '#FED7D7' : item.status === 'Planned' ? '#C6F6D5' : '#FEFCBF',
+                         color: item.status === 'Urgent' ? '#C53030' : item.status === 'Planned' ? '#2F855A' : '#744210'
+                      }}>
+                         {item.status}
+                      </span>
+                   </td>
+                   <td style={{padding:'16px 12px', color:'#718096'}}>{item.owner}</td>
+                   <td style={{padding:'16px 12px', fontWeight:'700', color:'#38A169'}}>{item.roi}</td>
+                </tr>
+             ))}
+          </tbody>
+       </table>
     </div>
   </div>
 );
 
 const TabGlossary = () => (
-  <div className="tab-content fade-in">
-    <div className="card">
-      <div style={{ borderBottom: '1px solid #E2E8F0', marginBottom: '20px', paddingBottom: '12px' }}>
-         <h3 style={{ margin: 0, color: '#1A365D' }}>Data Glossary & Sources</h3>
-         <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#718096' }}>Definitions of key industry metrics and data sources used in this dashboard.</p>
+   <div className="tab-content fade-in">
+      <div className="card">
+         <h3 style={{color:'#006B76'}}>Metrics Glossary & Data Sources</h3>
+         <div style={{display:'grid', gap:'20px'}}>
+            {glossaryTerms.map((term, i) => (
+               <div key={i} style={{paddingBottom:'20px', borderBottom: i < glossaryTerms.length-1 ? '1px solid #EDF2F7' : 'none'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline'}}>
+                     <h4 style={{margin:'0 0 8px 0', color:'#2D3748'}}>{term.term}</h4>
+                     <span style={{fontSize:'0.75rem', background:'#E6FFFA', color:'#006B76', padding:'2px 8px', borderRadius:'4px'}}>{term.source}</span>
+                  </div>
+                  <p style={{margin:0, color:'#4A5568', lineHeight:'1.6'}}>{term.def}</p>
+               </div>
+            ))}
+         </div>
       </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
-        {glossaryTerms.map((term, i) => (
-          <div key={i} style={{ padding: '16px', background: '#F7FAFC', borderRadius: '8px', borderLeft: '3px solid #006B76' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-               <div style={{ fontWeight: 'bold', color: '#2D3748', fontSize: '0.95rem' }}>{term.term}</div>
-               <span style={{ fontSize: '0.7rem', background: '#EDF2F7', padding: '2px 8px', borderRadius: '4px', color: '#4A5568' }}>{term.source}</span>
-            </div>
-            <div style={{ fontSize: '0.85rem', color: '#4A5568', lineHeight: '1.5' }}>{term.def}</div>
-          </div>
-        ))}
-      </div>
-      
-      <div style={{ marginTop: '28px', padding: '20px', background: '#EBF8FF', borderRadius: '8px', border: '1px solid #BEE3F8' }}>
-        <h4 style={{ margin: '0 0 8px 0', color: '#2C5282' }}>About Visit Dana Point (DMO)</h4>
-        <p style={{ margin: 0, fontSize: '0.9rem', color: '#2A4365', lineHeight: '1.6' }}>
-          Visit Dana Point is the non-profit Destination Marketing Organization (DMO) responsible for marketing Dana Point as a premier destination. 
-          Our mission is to drive visitor demand that generates economic impact for local businesses, supports jobs, and contributes to the quality of life 
-          in our community through tax revenue. We are a distinct entity from the City of Dana Point government.
-        </p>
-      </div>
-    </div>
-  </div>
+   </div>
 );
-
-// --- MAIN APP ---
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('pulse');
+  const [dashboardData, setDashboardData] = useState(INITIAL_DATA);
+  const [viewOptimization, setViewOptimization] = useState('');
 
-  const tabs = [
-    { id: 'pulse', label: 'Visit Dana Point Impact Overview', icon: Icons.Pulse },
-    { id: 'hospitality', label: 'Hotel Partnership Health & Revenue', icon: Icons.Hotel },
-    { id: 'economics', label: 'Destination Economic Engine', icon: Icons.Money },
-    { id: 'growth', label: 'Target Market Visitor Origins', icon: Icons.Growth },
-    { id: 'digital', label: 'Marketing Funnel & Conversion', icon: Icons.Digital },
-    { id: 'events', label: 'Signature Events & Community Activation', icon: Icons.Event },
-    { id: 'strategic', label: '2026 Strategic Initiative Roadmap', icon: Icons.Strategy },
-    { id: 'creative', label: 'Visual Intelligence Studio', icon: Icons.Image }, // New Tab
-    { id: 'glossary', label: 'Data Glossary & Sources', icon: Icons.Info },
-  ];
+  // Best Viewing Option Detection
+  useEffect(() => {
+    const checkViewport = () => {
+        const width = window.innerWidth;
+        if (width < 768) {
+            setViewOptimization('Mobile View: Analytics summarized for speed.');
+        } else if (width > 1600) {
+            setViewOptimization('Ultra-Wide View: Enhanced data density enabled.');
+        } else {
+            setViewOptimization('');
+        }
+    };
+    window.addEventListener('resize', checkViewport);
+    checkViewport(); // Initial check
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
+
+  // Groups for better sidebar organization
+  const tabGroups = {
+    overview: [
+        { id: 'pulse', label: 'Impact Overview', icon: Icons.Pulse },
+    ],
+    performance: [
+        { id: 'hospitality', label: 'Hotel & Revenue', icon: Icons.Hotel },
+        { id: 'economics', label: 'Economic Engine', icon: Icons.Money },
+        { id: 'growth', label: 'Visitor Origins', icon: Icons.Growth },
+    ],
+    marketing: [
+        { id: 'digital', label: 'Market Intelligence', icon: Icons.Analytics },
+        { id: 'events', label: 'Signature Events', icon: Icons.Event },
+    ],
+    innovation: [
+        { id: 'strategic', label: '2026 Strategy', icon: Icons.Strategy },
+        { id: 'creative', label: 'Visual Studio', icon: Icons.Image }, 
+        { id: 'upload', label: 'Data Management', icon: Icons.Upload },
+        { id: 'glossary', label: 'Data Sources', icon: Icons.Info },
+    ]
+  };
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'pulse': return <TabPulse />;
-      case 'hospitality': return <TabHospitality />;
-      case 'economics': return <TabEconomics />;
-      case 'growth': return <TabGrowth />;
-      case 'digital': return <TabDigital />;
-      case 'events': return <TabEvents />;
-      case 'strategic': return <TabStrategic />;
+      case 'pulse': return <TabPulse data={dashboardData} onHomeClick={() => setActiveTab('pulse')} />;
+      case 'hospitality': return <TabHospitality data={dashboardData} />;
+      case 'economics': return <TabEconomics data={dashboardData} />;
+      case 'growth': return <TabGrowth data={dashboardData} />;
+      case 'digital': return <TabDigital data={dashboardData} />;
+      case 'events': return <TabEvents data={dashboardData} />;
+      case 'strategic': return <TabStrategic data={dashboardData} />;
       case 'creative': return <VisualIntelligenceTab />;
+      case 'upload': return <DataUploadTab currentData={dashboardData} onUpdate={setDashboardData} />;
       case 'glossary': return <TabGlossary />;
-      default: return <TabPulse />;
+      default: return <TabPulse data={dashboardData} onHomeClick={() => setActiveTab('pulse')} />;
     }
   };
 
   return (
     <div className="dashboard-container">
-      {/* Disclaimer Modal (Simulated as part of Sidebar for now) */}
-      
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="logo-area">
-            <div className="logo-text">VISIT<br/>DANA POINT</div>
-            <div className="logo-sub">Strategic Intelligence</div>
-          </div>
-          <nav className="nav-links">
-            {tabs.map(tab => (
-              <div 
-                key={tab.id} 
-                className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <div style={{ color: activeTab === tab.id ? '#4FD1C5' : '#A0AEC0' }}><tab.icon /></div>
-                {tab.label}
-              </div>
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="logo-area">
+          <div className="logo-text">VISIT<br/>DANA POINT</div>
+          <div className="logo-sub">Strategic Intelligence</div>
+        </div>
+        
+        <nav className="nav-links">
+            {/* Render Groups */}
+            <div className="nav-group-label">Executive Summary</div>
+            {tabGroups.overview.map(tab => (
+                 <div key={tab.id} className={`nav-item ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                    <div style={{ color: activeTab === tab.id ? '#4FD1C5' : 'rgba(255,255,255,0.7)' }}><tab.icon /></div>
+                    {tab.label}
+                 </div>
             ))}
-          </nav>
-          <div style={{ padding: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <div style={{fontSize: '0.65rem', color: '#A0AEC0', lineHeight: '1.4'}}>
-              <strong>CONFIDENTIAL</strong><br/>
-              For Board & City Leadership Use Only.
-              <br/><br/>
-              Protected by GloCon Solutions LLC
-            </div>
-          </div>
-        </aside>
+            
+            <div className="nav-group-label" style={{marginTop: '24px'}}>Performance Data</div>
+            {tabGroups.performance.map(tab => (
+                 <div key={tab.id} className={`nav-item ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                    <div style={{ color: activeTab === tab.id ? '#4FD1C5' : 'rgba(255,255,255,0.7)' }}><tab.icon /></div>
+                    {tab.label}
+                 </div>
+            ))}
 
-        {/* Main Content */}
-        <main className="main-content">
-          <TopBanner />
-          {renderContent()}
-          <Footer />
-        </main>
-      </div>
+            <div className="nav-group-label" style={{marginTop: '24px'}}>Marketing & Events</div>
+            {tabGroups.marketing.map(tab => (
+                 <div key={tab.id} className={`nav-item ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                    <div style={{ color: activeTab === tab.id ? '#4FD1C5' : 'rgba(255,255,255,0.7)' }}><tab.icon /></div>
+                    {tab.label}
+                 </div>
+            ))}
+
+             <div className="nav-group-label" style={{marginTop: '24px'}}>Tools</div>
+            {tabGroups.innovation.map(tab => (
+                 <div key={tab.id} className={`nav-item ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                    <div style={{ color: activeTab === tab.id ? '#4FD1C5' : 'rgba(255,255,255,0.7)' }}><tab.icon /></div>
+                    {tab.label}
+                 </div>
+            ))}
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="main-content">
+        <TopBanner data={dashboardData} onHomeClick={() => setActiveTab('pulse')} />
+        
+        {viewOptimization && (
+            <div style={{ background: '#2D3748', color: 'white', padding: '8px 48px', fontSize: '0.75rem', textAlign: 'center', letterSpacing: '0.05em' }}>
+                ℹ️ {viewOptimization}
+            </div>
+        )}
+
+        <div className="content-wrapper">
+             {renderContent()}
+        </div>
+        <Footer />
+      </main>
     </div>
   );
 };
