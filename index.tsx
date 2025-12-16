@@ -28,7 +28,13 @@ const Icons = {
   Live: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite" /></circle></svg>,
   Analytics: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>,
   Upload: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-  Download: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  Download: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  Spark: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>,
+  Movie: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>,
+  Search: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Brain: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
+  Bolt: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  Map: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
 };
 
 // --- DATA ---
@@ -561,7 +567,6 @@ const IndustryNewsSection = () => {
              <div style={{ padding: '60px', textAlign: 'center', color: '#718096', fontStyle: 'italic', background: '#F7FAFC', borderRadius: '12px' }}>
                  <div style={{ marginBottom: '16px', fontWeight: '500' }}>Scanning vetted industry sources...</div>
                  <div style={{ width: '40px', height: '40px', border: '3px solid #CBD5E0', borderTop: '3px solid #006B76', borderRadius: '50%', margin: '0 auto', animation: 'spin 1s linear infinite' }}></div>
-                 <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
              </div>
         ) : (
             <>
@@ -908,191 +913,419 @@ const DataUploadTab = ({ currentData, onUpdate }) => {
   );
 };
 
-const VisualIntelligenceTab = () => {
+// --- CREATIVE STUDIO (IMAGE GEN, EDIT, VIDEO) ---
+const CreativeStudio = () => {
+    const [mode, setMode] = useState('generate'); // generate, edit, video
     const [prompt, setPrompt] = useState('');
-    const [size, setSize] = useState('1K');
+    const [aspectRatio, setAspectRatio] = useState('1:1');
+    const [imageSize, setImageSize] = useState('1K');
     const [loading, setLoading] = useState(false);
-    const [imageUrl, setImageUrl] = useState(null);
-    
-    // Visualization Controls
-    const [chartType, setChartType] = useState('Bar Chart');
-    const [palette, setPalette] = useState('VDP Brand (Teal/Navy)');
-    const [annotations, setAnnotations] = useState('');
+    const [resultUrl, setResultUrl] = useState(null);
+    const [uploadImage, setUploadImage] = useState(null); // base64 string
+    const [uploadPreview, setUploadPreview] = useState(null);
+    const fileRef = useRef(null);
 
-    const generateImage = async () => {
+    // Helpers
+    const handleFile = (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const base64Raw = evt.target?.result;
+            // Fix: Check if base64Raw is a string before splitting, as FileReader result can be ArrayBuffer
+            if (typeof base64Raw === 'string') {
+                setUploadPreview(base64Raw);
+                // strip header for API
+                const base64Data = base64Raw.split(',')[1];
+                const mimeType = base64Raw.split(';')[0].split(':')[1];
+                setUploadImage({ data: base64Data, mimeType });
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // Actions
+    const handleGenerate = async () => {
         if (!prompt) return;
         setLoading(true);
-        setImageUrl(null);
-        
-        // Construct Vetted Visualization Prompt
-        const visualizationPrompt = `
-          Create a professional, high-fidelity data visualization.
-          Topic/Data: ${prompt}
-          Chart Type: ${chartType}
-          Color Palette: ${palette} (Primary: #006B76, Secondary: #1A365D, Accent: #F6AD55)
-          Annotations: Include callouts for: ${annotations || "Key insights"}
-          Style: Clean, modern corporate dashboard style, white background, high contrast, legible typography.
-          Ensure the data representation looks accurate and professional suitable for a board meeting presentation.
-        `;
-
+        setResultUrl(null);
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-pro-image-preview',
-                contents: {
-                    parts: [{ text: visualizationPrompt }]
-                },
-                config: {
-                    imageConfig: {
-                        imageSize: size,
-                        aspectRatio: "16:9" 
+            
+            if (mode === 'generate') {
+                // Nano Banana Pro
+                const response = await ai.models.generateContent({
+                    model: 'gemini-3-pro-image-preview',
+                    contents: { parts: [{ text: prompt }] },
+                    config: { imageConfig: { aspectRatio, imageSize } }
+                });
+                for (const part of response.candidates[0].content.parts) {
+                    if (part.inlineData) {
+                        setResultUrl(`data:image/png;base64,${part.inlineData.data}`);
+                        break;
                     }
                 }
-            });
-
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    setImageUrl(`data:image/png;base64,${part.inlineData.data}`);
-                    break;
+            } 
+            else if (mode === 'edit') {
+                if (!uploadImage) { alert("Upload an image first"); return; }
+                // Nano Banana (Gemini 2.5 Flash Image)
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash-image',
+                    contents: {
+                        parts: [
+                            { inlineData: uploadImage },
+                            { text: prompt }
+                        ]
+                    }
+                });
+                for (const part of response.candidates[0].content.parts) {
+                    if (part.inlineData) {
+                        setResultUrl(`data:image/png;base64,${part.inlineData.data}`);
+                        break;
+                    }
                 }
             }
+            else if (mode === 'video') {
+                // Veo
+                let operation = await ai.models.generateVideos({
+                    model: 'veo-3.1-fast-generate-preview',
+                    prompt: prompt,
+                    image: uploadImage ? { imageBytes: uploadImage.data, mimeType: uploadImage.mimeType } : undefined,
+                    config: {
+                        numberOfVideos: 1,
+                        resolution: '720p',
+                        aspectRatio: aspectRatio === '1:1' ? '16:9' : aspectRatio // Veo only 16:9 or 9:16
+                    }
+                });
+                // Poll
+                while (!operation.done) {
+                    await new Promise(r => setTimeout(r, 5000));
+                    operation = await ai.operations.getVideosOperation({operation});
+                }
+                const vidUri = operation.response?.generatedVideos?.[0]?.video?.uri;
+                if (vidUri) {
+                    // Fetch with API key appended
+                    const vidRes = await fetch(`${vidUri}&key=${process.env.API_KEY}`);
+                    const blob = await vidRes.blob();
+                    setResultUrl(URL.createObjectURL(blob));
+                }
+            }
+
         } catch (e) {
             console.error(e);
-            alert("Visualization generation failed. Please try again.");
+            alert("Generation failed: " + e.message);
         } finally {
             setLoading(false);
         }
     };
 
-    const downloadImage = (format) => {
-        if (!imageUrl) return;
-        const img = new Image();
-        img.src = imageUrl;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const link = document.createElement('a');
-            link.download = `vdp-viz-${Date.now()}.${format.toLowerCase()}`;
-            link.href = canvas.toDataURL(`image/${format === 'JPG' ? 'jpeg' : 'png'}`, 0.9);
-            link.click();
+    return (
+        <div className="tab-content fade-in">
+            <div className="card">
+                <div style={{marginBottom: '24px', borderBottom: '1px solid #EDF2F7', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between'}}>
+                    <div>
+                        <h3 style={{margin:0, color:'#1A365D'}}>Creative Studio</h3>
+                        <p style={{margin:'4px 0 0 0', color:'#718096'}}>Powered by Nano Banana Pro & Veo</p>
+                    </div>
+                    <div style={{display: 'flex', gap: '8px'}}>
+                        {['generate', 'edit', 'video'].map(m => (
+                            <button 
+                                key={m}
+                                onClick={() => {setMode(m); setResultUrl(null);}}
+                                style={{
+                                    padding: '8px 16px',
+                                    borderRadius: '20px',
+                                    border: 'none',
+                                    background: mode === m ? '#006B76' : '#EDF2F7',
+                                    color: mode === m ? 'white' : '#4A5568',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    textTransform: 'capitalize'
+                                }}
+                            >
+                                {m}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="grid-2">
+                    <div>
+                        {/* INPUTS */}
+                        <div style={{marginBottom: '20px'}}>
+                            <label style={{display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#2D3748'}}>Prompt</label>
+                            <textarea 
+                                value={prompt} 
+                                onChange={e => setPrompt(e.target.value)} 
+                                placeholder={mode === 'edit' ? "e.g., Add a retro filter, remove the person..." : "Describe the image or video..."}
+                                style={{width: '100%', height: '100px'}}
+                            />
+                        </div>
+
+                        {/* UPLOAD (Edit/Video) */}
+                        {(mode === 'edit' || mode === 'video') && (
+                            <div style={{marginBottom: '20px'}}>
+                                <label style={{display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#2D3748'}}>Source Image {mode === 'video' && '(Optional)'}</label>
+                                <div 
+                                    onClick={() => fileRef.current.click()}
+                                    style={{
+                                        border: '2px dashed #CBD5E0', 
+                                        borderRadius: '12px', 
+                                        padding: '20px', 
+                                        textAlign: 'center', 
+                                        cursor: 'pointer',
+                                        background: uploadPreview ? `url(${uploadPreview}) center/cover` : '#F7FAFC',
+                                        height: '120px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                >
+                                    {!uploadPreview && <span style={{color: '#718096'}}>Click to Upload</span>}
+                                </div>
+                                <input type="file" ref={fileRef} onChange={handleFile} style={{display: 'none'}} accept="image/*" />
+                            </div>
+                        )}
+
+                        {/* CONTROLS */}
+                        <div className="grid-2" style={{gap: '16px', marginBottom: '24px'}}>
+                            <div>
+                                <label style={{fontSize: '0.8rem', fontWeight: 'bold', color: '#718096'}}>Aspect Ratio</label>
+                                <select value={aspectRatio} onChange={e => setAspectRatio(e.target.value)} style={{width: '100%'}}>
+                                    <option value="1:1">Square (1:1)</option>
+                                    <option value="16:9">Landscape (16:9)</option>
+                                    <option value="9:16">Portrait (9:16)</option>
+                                    <option value="4:3">Standard (4:3)</option>
+                                    <option value="3:4">Vertical (3:4)</option>
+                                </select>
+                            </div>
+                            {mode === 'generate' && (
+                                <div>
+                                    <label style={{fontSize: '0.8rem', fontWeight: 'bold', color: '#718096'}}>Size</label>
+                                    <select value={imageSize} onChange={e => setImageSize(e.target.value)} style={{width: '100%'}}>
+                                        <option value="1K">HD (1K)</option>
+                                        <option value="2K">2K</option>
+                                        <option value="4K">4K</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        <button onClick={handleGenerate} disabled={loading} className="cta-button" style={{width: '100%', justifyContent: 'center'}}>
+                            {loading ? 'Processing...' : (
+                                <>
+                                    {mode === 'generate' && <Icons.Image />}
+                                    {mode === 'edit' && <Icons.Spark />}
+                                    {mode === 'video' && <Icons.Movie />}
+                                    <span>{mode === 'edit' ? 'Transform' : 'Generate'}</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* PREVIEW AREA */}
+                    <div style={{background: '#1A202C', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', overflow: 'hidden'}}>
+                        {loading ? (
+                            <div style={{color: 'white', textAlign: 'center'}}>
+                                <Icons.Live />
+                                <div style={{marginTop: '12px'}}>Creating Magic...</div>
+                            </div>
+                        ) : resultUrl ? (
+                            mode === 'video' ? (
+                                <video src={resultUrl} controls autoPlay loop style={{maxWidth: '100%', maxHeight: '400px'}} />
+                            ) : (
+                                <img src={resultUrl} alt="Result" style={{maxWidth: '100%', maxHeight: '400px'}} />
+                            )
+                        ) : (
+                            <div style={{color: '#718096', textAlign: 'center'}}>
+                                <div style={{fontSize: '3rem', opacity: 0.3, marginBottom: '10px'}}><Icons.Image /></div>
+                                Output Preview
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- AI ANALYST (SEARCH, MAPS, THINKING) ---
+const AIAnalystTab = () => {
+    const [query, setQuery] = useState('');
+    const [response, setResponse] = useState(null); // { text, sources }
+    const [mode, setMode] = useState('fast'); // fast, search, maps, deep
+    const [loading, setLoading] = useState(false);
+    const [uploadImage, setUploadImage] = useState(null); // For image analysis
+    const fileRef = useRef(null);
+
+    const handleFile = (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const base64Raw = evt.target?.result;
+            // Fix: Check if base64Raw is a string before splitting, as FileReader result can be ArrayBuffer
+            if (typeof base64Raw === 'string') {
+                const base64Data = base64Raw.split(',')[1];
+                const mimeType = base64Raw.split(';')[0].split(':')[1];
+                setUploadImage({ data: base64Data, mimeType });
+            }
         };
+        reader.readAsDataURL(file);
+    };
+
+    const askGemini = async () => {
+        if (!query && !uploadImage) return;
+        setLoading(true);
+        setResponse(null);
+
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            let res;
+            let sources = [];
+
+            if (mode === 'fast') {
+                // Flash Lite
+                res = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash-lite',
+                    contents: query
+                });
+            } else if (mode === 'search') {
+                // Search Grounding
+                res = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: query,
+                    config: { tools: [{ googleSearch: {} }] }
+                });
+                sources = res.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+            } else if (mode === 'maps') {
+                // Maps Grounding
+                res = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: query,
+                    config: { tools: [{ googleMaps: {} }] }
+                });
+                // Maps sources are also in groundingChunks
+                sources = res.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+            } else if (mode === 'deep') {
+                // Thinking Mode (Gemini 3 Pro)
+                res = await ai.models.generateContent({
+                    model: 'gemini-3-pro-preview',
+                    contents: uploadImage ? { parts: [{inlineData: uploadImage}, {text: query}] } : query,
+                    config: { thinkingConfig: { thinkingBudget: 32768 } } // Max thinking
+                });
+            }
+
+            setResponse({
+                text: res.text,
+                sources: sources
+            });
+
+        } catch (e) {
+            setResponse({ text: "Error: " + e.message });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="tab-content fade-in">
-            <div className="card">
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #E2E8F0', paddingBottom:'20px', marginBottom:'24px'}}>
-                   <div>
-                       <h3 style={{margin:0, color:'#1A365D'}}>Visual Intelligence Studio</h3>
-                       <p style={{margin:'6px 0 0 0', color:'#718096', fontSize:'0.95rem'}}>Create AI-enhanced, presentation-ready visualizations powered by Gemini 3 Pro.</p>
-                   </div>
-                   <div className="badge badge-green">Gemini 3 Pro</div>
+            <div className="card" style={{minHeight: '600px', display: 'flex', flexDirection: 'column'}}>
+                <div style={{marginBottom: '24px', borderBottom: '1px solid #EDF2F7', paddingBottom: '16px'}}>
+                    <h3 style={{margin: 0, color: '#1A365D'}}>Market Intelligence Analyst</h3>
+                    <p style={{margin: '4px 0 0 0', color: '#718096'}}>Real-time research, map data, and strategic reasoning.</p>
                 </div>
 
-                <div className="grid-2">
-                    <div style={{display:'flex', flexDirection:'column', gap:'24px'}}>
-                        
-                        {/* Data Input */}
-                        <div>
-                            <label style={{fontSize:'0.9rem', fontWeight:'bold', color:'#2D3748', display:'block', marginBottom:'8px'}}>Data Topic / Metrics</label>
-                            <textarea 
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="E.g., Visitor spending trends 2024 vs 2025, showing 17% growth..."
-                                style={{width:'100%', height:'100px', padding:'16px', borderRadius:'12px', border:'1px solid #CBD5E0', fontFamily:'inherit', resize:'none', fontSize:'0.95rem'}}
-                            />
-                        </div>
-
-                        {/* Chart Controls */}
-                        <div className="grid-2" style={{gap: '20px'}}>
-                             <div>
-                                <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Chart Style</label>
-                                <select value={chartType} onChange={(e)=>setChartType(e.target.value)} style={{width:'100%'}}>
-                                    <option>Sleek Bar Chart</option>
-                                    <option>Glowing Line Graph</option>
-                                    <option>Modern Donut Chart</option>
-                                    <option>Scatter Plot with Trendline</option>
-                                    <option>Gradient Heatmap</option>
-                                    <option>Infographic Layout</option>
-                                </select>
-                             </div>
-                             <div>
-                                <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Color Palette</label>
-                                <select value={palette} onChange={(e)=>setPalette(e.target.value)} style={{width:'100%'}}>
-                                    <option>VDP Brand (Teal/Navy)</option>
-                                    <option>Ocean Cool (Blues)</option>
-                                    <option>Sunset Warm (Orange/Red)</option>
-                                    <option>Monochrome Scale</option>
-                                </select>
-                             </div>
-                        </div>
-
-                        {/* Advanced & Annotations */}
-                         <div className="grid-2" style={{gap: '20px'}}>
-                             <div>
-                                <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Annotations / Callouts</label>
-                                <input 
-                                    type="text" 
-                                    value={annotations}
-                                    onChange={(e) => setAnnotations(e.target.value)}
-                                    placeholder="E.g., 'Record High' label..." 
-                                    style={{width:'100%'}}
-                                />
-                             </div>
-                             <div>
-                                 <label style={{fontSize:'0.8rem', fontWeight:'bold', color:'#718096', marginBottom:'6px', display:'block'}}>Resolution</label>
-                                 <select value={size} onChange={(e)=>setSize(e.target.value)} style={{width:'100%'}}>
-                                     <option value="1K">HD (1K)</option>
-                                     <option value="2K">Full HD (2K)</option>
-                                     <option value="4K">Ultra HD (4K)</option>
-                                 </select>
-                             </div>
-                        </div>
-
-                        <button 
-                            onClick={generateImage}
-                            disabled={loading || !prompt}
-                            className="cta-button"
+                {/* MODE TOGGLES */}
+                <div style={{display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap'}}>
+                    {[
+                        {id: 'fast', label: 'Fast Chat', icon: Icons.Bolt},
+                        {id: 'search', label: 'Web Research', icon: Icons.Search},
+                        {id: 'maps', label: 'Location Scout', icon: Icons.Map},
+                        {id: 'deep', label: 'Deep Strategy', icon: Icons.Brain}
+                    ].map(m => (
+                        <button
+                            key={m.id}
+                            onClick={() => setMode(m.id)}
                             style={{
-                                marginTop:'12px',
-                                width: '100%',
-                                justifyContent: 'center',
-                                background: loading ? '#CBD5E0' : '#006B76'
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                padding: '10px 20px', borderRadius: '30px',
+                                border: mode === m.id ? '2px solid #006B76' : '1px solid #E2E8F0',
+                                background: mode === m.id ? '#E6FFFA' : 'white',
+                                color: mode === m.id ? '#006B76' : '#718096',
+                                fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s'
                             }}
                         >
-                            {loading ? 'Generating...' : <><span>✨</span> Generate Visualization</>}
+                            <m.icon /> {m.label}
                         </button>
-                    </div>
+                    ))}
+                </div>
 
-                    <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
-                        <div style={{background:'#F7FAFC', borderRadius:'16px', border:'2px dashed #CBD5E0', display:'flex', alignItems:'center', justifyContent:'center', minHeight:'400px', flex: 1, overflow:'hidden', position:'relative'}}>
-                            {imageUrl ? (
-                                <img src={imageUrl} alt="Generated Visualization" style={{maxWidth:'100%', borderRadius:'4px', boxShadow:'0 10px 25px rgba(0,0,0,0.1)'}} />
-                            ) : (
-                                <div style={{textAlign:'center', color:'#A0AEC0'}}>
-                                    <div style={{fontSize:'4rem', marginBottom:'16px', opacity: 0.2}}>
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                {/* RESPONSE AREA */}
+                <div style={{flex: 1, background: '#F7FAFC', borderRadius: '12px', padding: '24px', overflowY: 'auto', border: '1px solid #EDF2F7', marginBottom: '24px'}}>
+                    {loading ? (
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', color: '#006B76', fontWeight: '600'}}>
+                            <div className="spinner" style={{width:'20px', height:'20px', border:'3px solid #CBD5E0', borderTop:'3px solid #006B76', borderRadius:'50%'}}></div>
+                            {mode === 'deep' ? 'Thinking deeply (this may take a moment)...' : 'Analyzing...'}
+                        </div>
+                    ) : response ? (
+                        <div>
+                            <div style={{whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#2D3748', fontSize: '1rem'}}>
+                                {response.text ? parseBold(response.text) : 'No response content.'}
+                            </div>
+                            {/* Sources / Grounding */}
+                            {response.sources && response.sources.length > 0 && (
+                                <div style={{marginTop: '24px', borderTop: '1px solid #E2E8F0', paddingTop: '16px'}}>
+                                    <div style={{fontSize: '0.75rem', fontWeight: 'bold', color: '#718096', marginBottom: '8px', textTransform: 'uppercase'}}>Verified Sources</div>
+                                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+                                        {response.sources.map((s, i) => {
+                                            if (s.web?.uri) {
+                                                return (
+                                                    <a key={i} href={s.web.uri} target="_blank" rel="noreferrer" style={{fontSize: '0.8rem', color: '#006B76', background: 'white', padding: '4px 10px', borderRadius: '4px', border: '1px solid #B2F5EA', textDecoration: 'none'}}>
+                                                        {s.web.title || 'Web Source'} ↗
+                                                    </a>
+                                                )
+                                            }
+                                            if (s.maps?.placeId) { // Basic map check
+                                                return (
+                                                    <span key={i} style={{fontSize: '0.8rem', color: '#C53030', background: '#FFF5F5', padding: '4px 10px', borderRadius: '4px', border: '1px solid #FED7D7'}}>
+                                                        📍 {s.maps.title}
+                                                    </span>
+                                                )
+                                            }
+                                            return null;
+                                        })}
                                     </div>
-                                    <div style={{fontWeight: '600', color: '#718096'}}>Visualization Preview</div>
-                                    <div style={{fontSize:'0.8rem', marginTop:'8px'}}>Generative AI will render your data chart here.</div>
                                 </div>
                             )}
                         </div>
-                        
-                        {imageUrl && (
-                            <div style={{display:'flex', gap:'12px', justifyContent:'flex-end'}}>
-                                <button onClick={() => downloadImage('JPG')} style={{padding:'10px 20px', background:'white', border:'1px solid #CBD5E0', borderRadius:'8px', color:'#2D3748', cursor:'pointer', fontWeight:'600'}}>
-                                    Download JPG
-                                </button>
-                                <button onClick={() => downloadImage('PNG')} style={{padding:'10px 20px', background:'#2D3748', border:'none', borderRadius:'8px', color:'white', cursor:'pointer', fontWeight:'600'}}>
-                                    Download PNG
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    ) : (
+                        <div style={{textAlign: 'center', marginTop: '80px', color: '#A0AEC0'}}>
+                            <Icons.Brain />
+                            <p>Select a mode and ask a question to begin.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* INPUT AREA */}
+                <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
+                    {mode === 'deep' && (
+                        <>
+                            <input type="file" ref={fileRef} onChange={handleFile} style={{display:'none'}} accept="image/*" />
+                            <button onClick={() => fileRef.current.click()} style={{padding: '12px', borderRadius: '50%', border: '1px solid #E2E8F0', background: uploadImage ? '#E6FFFA' : 'white', cursor: 'pointer', color: uploadImage ? '#006B76' : '#718096'}}>
+                                <Icons.Image />
+                            </button>
+                        </>
+                    )}
+                    <input 
+                        type="text" 
+                        value={query} 
+                        onChange={e => setQuery(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && askGemini()}
+                        placeholder={mode === 'deep' ? "Ask a complex strategic question (or upload image to analyze)..." : mode === 'search' ? "Search for latest trends..." : "Type your query..."}
+                        style={{flex: 1, padding: '16px', borderRadius: '12px', border: '1px solid #CBD5E0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', fontSize: '1rem'}}
+                    />
+                    <button onClick={askGemini} disabled={loading} className="cta-button" style={{padding: '16px 24px', borderRadius: '12px'}}>
+                        <Icons.Spark /> Send
+                    </button>
                 </div>
             </div>
         </div>
@@ -1489,7 +1722,8 @@ const App = () => {
     ],
     innovation: [
         { id: 'strategic', label: '2026 Strategy', icon: Icons.Strategy },
-        { id: 'creative', label: 'Visual Studio', icon: Icons.Image }, 
+        { id: 'analyst', label: 'AI Analyst', icon: Icons.Brain },
+        { id: 'creative', label: 'Creative Studio', icon: Icons.Image }, 
         { id: 'upload', label: 'Data Management', icon: Icons.Upload },
         { id: 'glossary', label: 'Data Sources', icon: Icons.Info },
     ]
@@ -1504,7 +1738,8 @@ const App = () => {
       case 'digital': return <TabDigital data={dashboardData} />;
       case 'events': return <TabEvents data={dashboardData} />;
       case 'strategic': return <TabStrategic data={dashboardData} />;
-      case 'creative': return <VisualIntelligenceTab />;
+      case 'analyst': return <AIAnalystTab />;
+      case 'creative': return <CreativeStudio />;
       case 'upload': return <DataUploadTab currentData={dashboardData} onUpdate={setDashboardData} />;
       case 'glossary': return <TabGlossary />;
       default: return <TabPulse data={dashboardData} onHomeClick={() => setActiveTab('pulse')} />;
