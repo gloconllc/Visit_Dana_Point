@@ -19,8 +19,8 @@
         
         /* Surfaces */
         --bg-body: #F0F4F8;
-        --surface-white: rgba(255, 255, 255, 0.92); /* Slightly more transparent for backdrop integration */
-        --surface-glass: rgba(255, 255, 255, 0.75);
+        --surface-white: rgba(255, 255, 255, 0.95);
+        --surface-glass: rgba(255, 255, 255, 0.85);
         
         /* Text */
         --text-main: #1A202C;
@@ -42,7 +42,7 @@
         background-color: var(--bg-body);
         /* Dana Point Coastline Background - Faded */
         background-image: 
-          linear-gradient(to bottom right, rgba(240, 244, 248, 0.85), rgba(240, 244, 248, 0.95)),
+          linear-gradient(to bottom right, rgba(240, 244, 248, 0.90), rgba(240, 244, 248, 0.95)),
           url('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=2070&auto=format&fit=crop'); /* Dana Point/Coastal Vibe */
         background-size: cover;
         background-attachment: fixed;
@@ -53,7 +53,7 @@
       }
 
       /* Custom Scrollbar - Refined */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { 
         background: #CBD5E0; 
@@ -156,6 +156,36 @@
         border-left: 3px solid #4FD1C5;
       }
       
+      /* --- HEADER / TOP BANNER --- */
+      .top-banner {
+        background: var(--surface-glass);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255,255,255,0.4);
+        padding: 16px 40px;
+        flex-shrink: 0;
+        z-index: 40;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        transition: padding 0.3s ease;
+      }
+
+      .top-banner-left {
+        display: flex; 
+        flex-direction: column; 
+        cursor: pointer;
+      }
+
+      .top-banner-stats {
+        display: flex;
+        gap: 32px;
+        font-size: 0.9rem;
+        color: #4A5568;
+        font-weight: 500;
+        align-items: center;
+      }
+
       /* --- MAIN CONTENT --- */
       .main-content {
         flex: 1;
@@ -187,6 +217,7 @@
         backdrop-filter: blur(8px);
         position: relative;
         overflow: hidden;
+        break-inside: avoid; /* Prevent print break inside cards */
       }
       
       .card:hover {
@@ -206,6 +237,21 @@
         align-items: center;
         border-bottom: 1px solid rgba(0,0,0,0.05);
         padding-bottom: 12px;
+      }
+
+      /* --- IMPACT PANEL GRID --- */
+      .impact-hero-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        background: white;
+      }
+      
+      .impact-hero-metric {
+        padding: 32px;
+        border-right: 1px solid #EDF2F7;
+      }
+      .impact-hero-metric:last-child {
+        border-right: none;
       }
 
       /* --- UI ELEMENTS --- */
@@ -235,6 +281,8 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        white-space: nowrap;
+        text-decoration: none;
       }
       .cta-button:hover {
         background: linear-gradient(135deg, #008C99 0%, #006B76 100%);
@@ -304,7 +352,7 @@
       .spinner { animation: spin 1s linear infinite; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-      /* Ticker Animation */
+      /* Ticker Animation - SLOWED DOWN & PAUSABLE */
       @keyframes ticker {
         0% { transform: translateX(100%); }
         100% { transform: translateX(-100%); }
@@ -314,22 +362,40 @@
         overflow: hidden;
         background: #004E56;
         color: white;
-        height: 40px;
+        height: 42px;
         display: flex;
         align-items: center;
+        position: relative;
+        z-index: 5;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
       }
       .ticker-content {
         display: inline-block;
         white-space: nowrap;
-        animation: ticker 60s linear infinite;
+        animation: ticker 120s linear infinite; /* Slowed down to 120s for readability */
         padding-left: 100%;
         font-size: 0.9rem;
         font-weight: 500;
       }
+      .ticker-content:hover {
+        animation-play-state: paused; /* Interactive Pause */
+      }
       .ticker-item {
         display: inline-block;
-        padding: 0 2rem;
-        border-right: 1px solid rgba(255,255,255,0.2);
+        padding: 0 2.5rem;
+        border-right: 1px solid rgba(255,255,255,0.15);
+      }
+      .ticker-item a {
+        color: white;
+        text-decoration: none;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ticker-item a:hover {
+        color: #81E6D9;
+        text-decoration: underline;
       }
 
       .app-footer {
@@ -343,12 +409,14 @@
       
       /* Print Styles for Reports */
       @media print {
-        .sidebar, .ticker-wrap, .app-footer, .no-print { display: none !important; }
-        .dashboard-container { display: block; }
-        .main-content { overflow: visible; }
+        .sidebar, .app-footer, .no-print, .ticker-wrap { display: none !important; }
+        .dashboard-container { display: block; height: auto; }
+        .main-content { overflow: visible; height: auto; }
         .content-wrapper { padding: 0; max-width: 100%; }
-        .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
-        body { background: white; -webkit-print-color-adjust: exact; }
+        .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
+        body { background: white; -webkit-print-color-adjust: exact; font-size: 10pt; }
+        .top-banner { position: static; box-shadow: none; border: none; background: white; padding: 0; }
+        .impact-hero-header { color: black !important; background: none !important; border: 1px solid #ccc; }
       }
 
       /* --- RESPONSIVE --- */
@@ -356,14 +424,83 @@
         .content-wrapper { padding: 24px; }
         .grid-2, .grid-4 { grid-template-columns: repeat(2, 1fr); }
       }
+      
       @media (max-width: 768px) {
         .dashboard-container { flex-direction: column; }
-        .sidebar { width: 100%; padding: 0; position: sticky; top: 0; border-right: none; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* Mobile Sidebar as Top Menu */
+        .sidebar { 
+          width: 100%; 
+          padding: 0; 
+          position: sticky; 
+          top: 0; 
+          border-right: none; 
+          height: auto; 
+          box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+          z-index: 100;
+        }
         .logo-area, .nav-group-label { display: none; }
-        .nav-links { display: flex; flex-direction: row; padding: 12px; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .nav-item { padding: 8px 12px; margin: 0; white-space: nowrap; font-size: 0.8rem; background: rgba(255,255,255,0.1); flex-shrink: 0; }
-        .nav-item.active { border-left: none; border-bottom: 3px solid #4FD1C5; }
+        .nav-links { 
+          display: flex; 
+          flex-direction: row; 
+          padding: 12px 16px; 
+          gap: 16px; 
+          overflow-x: auto; 
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+        
+        .nav-item { 
+          padding: 10px 16px; 
+          margin: 0; 
+          white-space: nowrap; 
+          font-size: 0.9rem; 
+          background: rgba(255,255,255,0.1); 
+          flex-shrink: 0;
+          border-radius: 20px;
+          border-left: none;
+        }
+        .nav-item.active { 
+          border-left: none; 
+          background: #4FD1C5;
+          color: #004E56;
+        }
+        
+        /* Stack Grids */
         .grid-2, .grid-4 { grid-template-columns: 1fr; }
+        
+        /* Header Mobile */
+        .top-banner {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 20px !important;
+        }
+        
+        .top-banner-stats {
+          width: 100%;
+          justify-content: space-between;
+          gap: 12px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+        
+        /* Impact Panel Mobile */
+        .impact-hero-grid {
+          grid-template-columns: 1fr !important;
+        }
+        .impact-hero-metric {
+          border-right: none !important;
+          border-bottom: 1px solid #EDF2F7;
+          padding: 24px !important;
+        }
+        .impact-hero-metric:last-child {
+          border-bottom: none;
+        }
+        
+        /* Content Spacing */
+        .content-wrapper { padding: 20px 16px; }
       }
     </style>
 <script type="importmap">
