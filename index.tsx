@@ -108,11 +108,14 @@ const Icons = {
   VideoSpark: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 10l5 5-5 5"/><path d="M4 4v16"/><path d="M4 12h16"/></svg>,
   Scan: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>,
   Edit: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Chat: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  Close: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+  Send: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>,
 };
 
 // --- DATA ---
 const TOOLTIPS = {
-  OCCUPANCY: "Percent of hotel rooms filled. High occupancy proves VDP is driving demand.",
+  OCCUPANCY: "Percent of partner hotel rooms filled. High occupancy proves VDP is driving demand.",
   ADR: "Average Daily Rate (Price per room). VDP markets to high-value visitors to increase this rate.",
   REVPAR: "Revenue Per Available Room. The gold standard for hotel financial success.",
   DAY_TRIPPER: "Visitors who visit for the day but don't stay overnight. Goal: Convert to overnight.",
@@ -128,9 +131,9 @@ const TOOLTIPS = {
 const INITIAL_DATA = {
   pulse: {
     kpis: [
-      { label: 'Hotel Occupancy', value: '64.2%', trend: '-5.8 pts', status: 'yellow', sub: 'Target 70%', tooltip: TOOLTIPS.OCCUPANCY, source: 'STR', icon: 'Hotel' },
-      { label: 'Visitor Spending', value: '$481M', trend: '+$204M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.SPEND_IMPACT, source: 'Datafy', icon: 'Money' },
-      { label: 'Partner Revenue', value: '$65.6M', trend: '+$9.8M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.PARTNER_REV, source: 'STR', icon: 'Analytics' },
+      { label: 'Partner Hotel Occupancy', value: '64.2%', trend: '-5.8 pts', status: 'yellow', sub: 'Target 70%', tooltip: TOOLTIPS.OCCUPANCY, source: 'STR', icon: 'Hotel' },
+      { label: 'Visitor Spending Driven by VDP', value: '$481M', trend: '+$204M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.SPEND_IMPACT, source: 'Datafy', icon: 'Money' },
+      { label: 'Partner Hotel Revenue', value: '$65.6M', trend: '+$9.8M', status: 'green', sub: 'On Track', tooltip: TOOLTIPS.PARTNER_REV, source: 'STR', icon: 'Analytics' },
       { label: 'LA Visitors', value: '+17.1%', trend: 'Growth', status: 'green', sub: 'Target 17.5%', tooltip: TOOLTIPS.MARKET_VISITORS, source: 'Datafy', icon: 'Growth' },
     ],
     headline: {
@@ -456,38 +459,59 @@ const ExportMenu = ({ title, data, type = 'report' }) => {
   };
 
   const handleDownloadCSV = () => {
+    // Robust flattening logic for nested data structures
     const flatten = (obj, prefix = '') => {
       return Object.keys(obj).reduce((acc, k) => {
-        const pre = prefix.length ? prefix + '.' : '';
+        const pre = prefix.length ? prefix + '_' : '';
         if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
           Object.assign(acc, flatten(obj[k], pre + k));
+        } else if (Array.isArray(obj[k])) {
+           // For arrays, we just join simple values or stringify complex ones to avoid CSV breakage
+           acc[pre + k] = obj[k].map(i => (typeof i === 'object' ? JSON.stringify(i) : i)).join(' | ');
         } else {
-          acc[pre + k] = JSON.stringify(obj[k]);
+          acc[pre + k] = obj[k];
         }
         return acc;
       }, {});
     };
 
-    const flatData = Array.isArray(data) ? data.map(d => flatten(d)) : [flatten(data)];
+    let flatData = [];
+    if (Array.isArray(data)) {
+        flatData = data.map(d => flatten(d));
+    } else {
+        // If it's a single object (like the whole dashboard state), wrap it or flatten it
+        flatData = [flatten(data)];
+    }
+
     if(flatData.length === 0) return;
     
     const headers = Object.keys(flatData[0]);
     const csvContent = [
       headers.join(','),
-      ...flatData.map(row => headers.map(fieldName => row[fieldName]).join(','))
+      ...flatData.map(row => headers.map(fieldName => {
+          let val = row[fieldName] !== undefined ? row[fieldName] : '';
+          // Escape quotes and wrap in quotes if contains comma
+          if (typeof val === 'string') {
+              val = val.replace(/"/g, '""');
+              if (val.search(/("|,|\n)/g) >= 0) val = `"${val}"`;
+          }
+          return val;
+      }).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${title.replace(/\s+/g, '_')}_data.csv`;
+    link.download = `${title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     setIsOpen(false);
   };
 
   const handleShareEmail = () => {
-    const subject = `VDP Dashboard Report: ${title}`;
-    const body = `Here is the ${title} report from the Visit Dana Point Dashboard.\n\nLink: ${window.location.href}`;
+    const subject = `VDP Strategic Insight: ${title}`;
+    // Truncate data for email body to prevent link breakage
+    const dataPreview = JSON.stringify(data, null, 2).substring(0, 500) + (JSON.stringify(data).length > 500 ? '...' : '');
+    const body = `Review the ${title} report from the Visit Dana Point Dashboard.\n\nSummary Data:\n${dataPreview}\n\nAccess full dashboard for details.`;
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setIsOpen(false);
   };
@@ -505,16 +529,16 @@ const ExportMenu = ({ title, data, type = 'report' }) => {
         <div style={{
           position: 'absolute', top: '100%', right: 0, marginTop: '8px',
           background: 'white', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-          padding: '8px', width: '180px', zIndex: 100, border: '1px solid #EDF2F7'
+          padding: '8px', width: '200px', zIndex: 100, border: '1px solid #EDF2F7'
         }}>
           <div onClick={handlePrint} style={{padding: '8px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#2D3748', transition: 'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#EDF2F7'} onMouseOut={e=>e.currentTarget.style.background='white'}>
-            <Icons.Print /> Print PDF Report
+            <Icons.Print /> Print / PDF (Vivid)
           </div>
           <div onClick={handleDownloadCSV} style={{padding: '8px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#2D3748', transition: 'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#EDF2F7'} onMouseOut={e=>e.currentTarget.style.background='white'}>
-            <Icons.Download /> Download CSV
+            <Icons.Download /> Download Data (CSV)
           </div>
           <div onClick={handleShareEmail} style={{padding: '8px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#2D3748', transition: 'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#EDF2F7'} onMouseOut={e=>e.currentTarget.style.background='white'}>
-            <Icons.Share /> Email Link
+            <Icons.Share /> Email Insight
           </div>
         </div>
       )}
@@ -532,8 +556,8 @@ const NewsTicker = () => {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash', // Switched from lite to flash to support search tools
-          contents: 'Find 5 recent tourism news headlines related to Dana Point or California travel. Return valid JSON array [{"title": "Headline", "url": "http"}].',
+          model: 'gemini-2.5-flash', 
+          contents: 'Find 5 recent tourism news headlines related to Dana Point or California travel. Return valid JSON array [{"title": "Headline", "url": "http"}]. Ensure headlines are concise and professional.',
           config: { tools: [{ googleSearch: {} }] }
         });
         
@@ -557,14 +581,14 @@ const NewsTicker = () => {
       <div className="ticker-content">
         {items.map((item, i) => (
           <div key={i} className="ticker-item">
-            <span style={{color: '#81E6D9', fontWeight: 'bold', marginRight: '8px', fontSize: '0.8rem'}}>LIVE:</span>
-            <a href={item.url} target="_blank" rel="noopener noreferrer">{item.title}</a>
+            <span style={{color: '#81E6D9', fontWeight: 'bold', marginRight: '16px', fontSize: '0.8rem'}}>LIVE:</span>
+            <a href={item.url} target="_blank" rel="noopener noreferrer" style={{marginRight: '60px', wordSpacing: '0.15em', letterSpacing: '0.02em'}}>{item.title}</a>
           </div>
         ))}
         {items.map((item, i) => (
           <div key={`dup-${i}`} className="ticker-item">
-            <span style={{color: '#81E6D9', fontWeight: 'bold', marginRight: '8px', fontSize: '0.8rem'}}>LIVE:</span>
-            <a href={item.url} target="_blank" rel="noopener noreferrer">{item.title}</a>
+            <span style={{color: '#81E6D9', fontWeight: 'bold', marginRight: '16px', fontSize: '0.8rem'}}>LIVE:</span>
+            <a href={item.url} target="_blank" rel="noopener noreferrer" style={{marginRight: '60px', wordSpacing: '0.15em', letterSpacing: '0.02em'}}>{item.title}</a>
           </div>
         ))}
       </div>
@@ -663,6 +687,7 @@ const InfomagicCard = ({ context }) => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const prompt = `Provide a specialized "Vetted Benchmark Analysis" for the ${context} section of the Visit Dana Point Dashboard.
         Find ONE verifiable industry statistic from 2024-2025 (e.g., from STR, Visit California, US Travel Assoc) that compares to VDP's performance.
+        Adopt an academic/professional tone suitable for executive reporting. Cite sources (e.g., "According to STR...").
         Format as JSON: { "title": "Headline", "body": "Analysis...", "comparison": "VDP X% vs Industry Y%" }.
         Use googleSearch tool.`;
         
@@ -705,7 +730,7 @@ const InfomagicCard = ({ context }) => {
 
 // --- DMO IMPACT PANEL (UPDATED) ---
 const DmoImpactPanel = ({ data }) => {
-  const revenueKPI = data.pulse?.kpis?.find(k => k.label.includes('Partner Revenue'));
+  const revenueKPI = data.pulse?.kpis?.find(k => k.label.includes('Partner Hotel Revenue'));
   const revenueStr = revenueKPI ? revenueKPI.value : '$65.6M';
   const revenue = parseFloat(revenueStr.replace(/[^0-9.]/g, '')) || 65.6; 
   // Calculation: 10% TOT rate on revenue
@@ -730,6 +755,7 @@ const DmoImpactPanel = ({ data }) => {
     setGenerating(true);
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        // Attempt to generate with Pro Preview model
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-image-preview',
             contents: {
@@ -744,11 +770,16 @@ const DmoImpactPanel = ({ data }) => {
             }
         }
     } catch(e) { 
-        console.error(e);
-        alert("Visual generation failed. You may not have access to the preview model.");
+        // Fallback silently if generation fails (e.g. 403 permission denied) to avoid disturbing user
+        console.warn("Visual generation skipped due to access restrictions.");
     }
     setGenerating(false);
   };
+
+  // Auto-generate on mount
+  useEffect(() => {
+      generateVisual();
+  }, []);
 
   return (
     <div className="impact-hero" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', background: 'white' }}>
@@ -782,10 +813,8 @@ const DmoImpactPanel = ({ data }) => {
                 <p style={{ margin: 0, fontSize: '1.1rem', opacity: 0.9, lineHeight: '1.6' }}>
                     Visit Dana Point's marketing engine transforms global interest into verifiable community prosperity. We fill the rooms that fund the City.
                 </p>
-                <div style={{marginTop: '20px'}}>
-                    <button onClick={generateVisual} disabled={generating} className="cta-button secondary" style={{color: 'white', borderColor: 'rgba(255,255,255,0.5)', background: 'rgba(0,0,0,0.2)'}}>
-                        <Icons.Image /> {generating ? 'Generating Daily Visual...' : 'Refresh Executive Visual'}
-                    </button>
+                <div style={{marginTop: '20px', opacity: 0.7, fontSize: '0.8rem'}}>
+                    {generating ? 'Refreshing Executive Visual...' : 'Visual Auto-Generated Daily'}
                 </div>
             </div>
             <div className="no-print">
@@ -1451,18 +1480,33 @@ const VideoAnalyst = () => {
                 const base64Data = (reader.result as string).split(',')[1];
                 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3-pro-preview',
-                    contents: {
-                        parts: [
-                            { inlineData: { mimeType: file.type, data: base64Data } },
-                            { text: "Analyze this video clip for Visit Dana Point. Identify key tourism assets shown, the general sentiment/vibe, and provide 3 keywords for SEO tagging." }
-                        ]
-                    },
-                    config: { thinkingConfig: { thinkingBudget: 1024 } }
-                });
+                // Fallback Logic for Video Analysis
+                try {
+                    const response = await ai.models.generateContent({
+                        model: 'gemini-3-pro-preview',
+                        contents: {
+                            parts: [
+                                { inlineData: { mimeType: file.type, data: base64Data } },
+                                { text: "Analyze this video clip for Visit Dana Point. Identify key tourism assets shown, the general sentiment/vibe, and provide 3 keywords for SEO tagging." }
+                            ]
+                        },
+                        config: { thinkingConfig: { thinkingBudget: 1024 } }
+                    });
+                    setAnalysis(response.text || "No analysis returned.");
+                } catch(e) {
+                    console.warn("Pro model failed, falling back to Flash for video analysis");
+                    const response = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: {
+                            parts: [
+                                { inlineData: { mimeType: file.type, data: base64Data } },
+                                { text: "Analyze this video clip for Visit Dana Point. Identify key tourism assets shown, the general sentiment/vibe, and provide 3 keywords for SEO tagging." }
+                            ]
+                        }
+                    });
+                    setAnalysis(response.text || "No analysis returned.");
+                }
                 
-                setAnalysis(response.text || "No analysis returned.");
                 setLoading(false);
             };
         } catch (e) {
@@ -1519,18 +1563,31 @@ const GloConAnalystTab = () => {
     setLoading(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const result = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // Upgraded model for deep reasoning
-        contents: query,
-        config: {
-            // Thinking mode enabled for complex analysis
-            thinkingConfig: { thinkingBudget: 32768 }, 
-            systemInstruction: "You are an expert GloCon Analyst for Visit Dana Point. Answer questions based on tourism data.",
-        }
-      });
+      let result;
+      try {
+          // Try Pro with Thinking first
+          result = await ai.models.generateContent({
+            model: 'gemini-3-pro-preview', 
+            contents: query,
+            config: {
+                thinkingConfig: { thinkingBudget: 32768 }, 
+                systemInstruction: "You are an expert GloCon Analyst for Visit Dana Point. Answer questions based on tourism data using a professional, academic tone. Cite sources (e.g., 'according to Datafy...') where applicable.",
+            }
+          });
+      } catch (e) {
+          console.warn("Pro model failed, falling back to Flash");
+          // Fallback to Flash without thinking config
+          result = await ai.models.generateContent({
+            model: 'gemini-2.5-flash', 
+            contents: query,
+            config: {
+                systemInstruction: "You are an expert GloCon Analyst for Visit Dana Point. Answer questions based on tourism data using a professional, academic tone. Cite sources (e.g., 'according to Datafy...') where applicable.",
+            }
+          });
+      }
       setResponse(result.text);
     } catch (e) {
-      setResponse("Error analyzing data. Please try again.");
+      setResponse("Error analyzing data. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -1764,17 +1821,31 @@ const ImageAnalyst = () => {
                 const base64Data = (reader.result as string).split(',')[1];
                 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3-pro-preview',
-                    contents: {
-                        parts: [
-                            { inlineData: { mimeType: file.type, data: base64Data } },
-                            { text: "Analyze this image for Visit Dana Point. Identify key tourism assets, demographics, and sentiment." }
-                        ]
-                    },
-                    config: { thinkingConfig: { thinkingBudget: 1024 } }
-                });
-                setAnalysis(response.text || "No analysis returned.");
+                try {
+                    const response = await ai.models.generateContent({
+                        model: 'gemini-3-pro-preview',
+                        contents: {
+                            parts: [
+                                { inlineData: { mimeType: file.type, data: base64Data } },
+                                { text: "Analyze this image for Visit Dana Point. Identify key tourism assets, demographics, and sentiment." }
+                            ]
+                        },
+                        config: { thinkingConfig: { thinkingBudget: 1024 } }
+                    });
+                    setAnalysis(response.text || "No analysis returned.");
+                } catch(e) {
+                    console.warn("Pro model failed, falling back to Flash for image analysis");
+                    const response = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: {
+                            parts: [
+                                { inlineData: { mimeType: file.type, data: base64Data } },
+                                { text: "Analyze this image for Visit Dana Point. Identify key tourism assets, demographics, and sentiment." }
+                            ]
+                        }
+                    });
+                    setAnalysis(response.text || "No analysis returned.");
+                }
                 setLoading(false);
             };
         } catch(e) { setLoading(false); }
@@ -2071,6 +2142,151 @@ const TabPulse = ({ data, onHomeClick }) => {
   );
 };
 
+// --- CHATBOT COMPONENT ---
+const ChatBot = () => {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<{role: 'user'|'model', text: string}[]>([]);
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    const userMsg = input;
+    setInput('');
+    setMessages(prev => [...prev, {role: 'user', text: userMsg}]);
+    setLoading(true);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      let text = '';
+      
+      try {
+          // Attempt using Pro model first
+          const response = await ai.models.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: [
+                { role: 'user', parts: [{ text: userMsg }] }
+            ],
+            config: {
+                thinkingConfig: { thinkingBudget: 32768 },
+                systemInstruction: "You are a professional tourism data analyst for Visit Dana Point (VDP). Use a formal, academic tone typical of a professor or senior strategy consultant. Cite data sources rigorously (using logic similar to APA/MLA citation styles). Base your answers on tourism economics, hospitality metrics (STR, Datafy), and strategic growth principles. If you don't know something, state it clearly.",
+            }
+          });
+          text = response.text || "I apologize, but I could not generate a response at this time.";
+      } catch(e) {
+          console.warn("Pro model failed, falling back to Flash");
+          // Fallback to Flash if Pro fails (e.g. 403 permission denied)
+          const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [
+                { role: 'user', parts: [{ text: userMsg }] }
+            ],
+            config: {
+                systemInstruction: "You are a professional tourism data analyst for Visit Dana Point (VDP). Use a formal, academic tone typical of a professor or senior strategy consultant. Cite data sources rigorously (using logic similar to APA/MLA citation styles). Base your answers on tourism economics, hospitality metrics (STR, Datafy), and strategic growth principles.",
+            }
+          });
+          text = response.text || "I apologize, but I could not generate a response at this time.";
+      }
+      
+      setMessages(prev => [...prev, {role: 'model', text: text}]);
+    } catch (e) {
+      setMessages(prev => [...prev, {role: 'model', text: "Error: Unable to connect to VDP Intelligence. Please try again."}]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div 
+        onClick={() => setOpen(!open)} 
+        style={{
+          position: 'fixed', bottom: '30px', right: '30px', 
+          width: '60px', height: '60px', borderRadius: '50%', 
+          background: '#006B76', boxShadow: '0 4px 12px rgba(0,0,0,0.25)', 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', 
+          cursor: 'pointer', zIndex: 1000, color: 'white', transition: 'transform 0.2s'
+        }}
+        className="no-print"
+        onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
+        onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        {open ? <Icons.Close /> : <Icons.Chat />}
+      </div>
+
+      {open && (
+        <div style={{
+          position: 'fixed', bottom: '100px', right: '30px', 
+          width: '380px', height: '500px', background: 'white', 
+          borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', 
+          zIndex: 1000, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          border: '1px solid #E2E8F0'
+        }} className="no-print">
+          <div style={{padding: '16px', background: '#006B76', color: 'white', display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <Icons.Brain />
+            <div>
+              <div style={{fontWeight: '700', fontSize: '0.95rem'}}>VDP Intelligence</div>
+              <div style={{fontSize: '0.7rem', opacity: 0.8}}>Powered by Gemini 3 Pro (Thinking Mode)</div>
+            </div>
+          </div>
+          
+          <div style={{flex: 1, padding: '16px', overflowY: 'auto', background: '#F7FAFC'}}>
+            {messages.length === 0 && (
+              <div style={{textAlign: 'center', color: '#718096', marginTop: '40px', fontSize: '0.9rem'}}>
+                <p>Welcome to the VDP Strategy Bot.</p>
+                <p>Ask about occupancy trends, marketing ROI, or visitor demographics.</p>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} style={{marginBottom: '12px', display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start'}}>
+                <div style={{
+                  maxWidth: '85%', padding: '10px 14px', borderRadius: '12px', 
+                  fontSize: '0.9rem', lineHeight: '1.5',
+                  background: m.role === 'user' ? '#006B76' : 'white',
+                  color: m.role === 'user' ? 'white' : '#2D3748',
+                  boxShadow: m.role === 'model' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                  borderBottomRightRadius: m.role === 'user' ? '0' : '12px',
+                  borderBottomLeftRadius: m.role === 'model' ? '0' : '12px'
+                }}>
+                  {parseBold(m.text)}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{alignSelf: 'flex-start', background: 'white', padding: '10px', borderRadius: '12px', fontSize: '0.8rem', color: '#718096', fontStyle: 'italic'}}>
+                Analyzing data...
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div style={{padding: '12px', background: 'white', borderTop: '1px solid #E2E8F0', display: 'flex', gap: '8px'}}>
+            <input 
+              value={input} 
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              placeholder="Ask a strategic question..." 
+              style={{flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #CBD5E0', fontSize: '0.9rem'}}
+            />
+            <button onClick={handleSend} disabled={loading} style={{background: '#006B76', color: 'white', border: 'none', borderRadius: '8px', width: '40px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+              <Icons.Send />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('pulse');
   const [dashboardData, setDashboardData] = useState(INITIAL_DATA);
@@ -2185,6 +2401,7 @@ const App = () => {
              {renderContent()}
         </div>
         <Footer />
+        <ChatBot />
       </main>
     </div>
   );

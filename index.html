@@ -409,14 +409,29 @@
       
       /* Print Styles for Reports */
       @media print {
+        body { 
+            background: white; 
+            font-size: 10pt; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+        }
         .sidebar, .app-footer, .no-print, .ticker-wrap { display: none !important; }
         .dashboard-container { display: block; height: auto; }
         .main-content { overflow: visible; height: auto; }
         .content-wrapper { padding: 0; max-width: 100%; }
-        .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
-        body { background: white; -webkit-print-color-adjust: exact; font-size: 10pt; }
+        .card { 
+            box-shadow: none; 
+            border: 1px solid #ccc; 
+            break-inside: avoid; 
+            page-break-inside: avoid; 
+            margin-bottom: 20px; 
+        }
         .top-banner { position: static; box-shadow: none; border: none; background: white; padding: 0; }
-        .impact-hero-header { color: black !important; background: none !important; border: 1px solid #ccc; }
+        .impact-hero-header { 
+            color: white !important; 
+            background-image: linear-gradient(to bottom right, #1A365D 0%, #006B76 100%) !important;
+            border: 1px solid #ccc; 
+        }
       }
 
       /* --- RESPONSIVE --- */
