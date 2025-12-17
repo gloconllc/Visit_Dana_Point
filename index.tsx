@@ -12,6 +12,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
 
+// --- HELPER: ROBUST JSON PARSING ---
+const parseJSON = (text) => {
+  try {
+    // Try standard parse first
+    return JSON.parse(text);
+  } catch (e) {
+    // If that fails, try to extract array or object from markdown blocks
+    try {
+      const match = text.match(/\[.*\]/s) || text.match(/\{.*\}/s);
+      if (match) {
+        return JSON.parse(match[0]);
+      }
+    } catch (e2) {
+      console.warn("JSON Parse failed", e2);
+    }
+    return null;
+  }
+};
+
 // --- PROFESSIONAL ICONS (Duotone Style) ---
 const Icons = {
   Pulse: () => (
@@ -681,8 +700,8 @@ const InfomagicCard = ({ context }) => {
           config: { tools: [{ googleSearch: {} }] }
         });
         
-        const text = result.text?.replace(/```json/g, '').replace(/```/g, '').trim() || "{}";
-        setInsight(JSON.parse(text));
+        const text = result.text?.trim() || "{}";
+        setInsight(parseJSON(text));
       } catch(e) {
         // Fallback if AI fails
         setInsight({
@@ -797,10 +816,7 @@ const DmoImpactPanel = ({ data, newsItems }) => {
                     Visit Dana Point's marketing engine transforms global interest into verifiable community prosperity. We fill the rooms that fund the City.
                 </p>
                 <div style={{marginTop: '20px', opacity: 0.7, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '12px'}}>
-                    <button onClick={generateVisual} disabled={generating} style={{background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                        <Icons.Refresh /> {generating ? 'Generating...' : 'Refresh Visual'}
-                    </button>
-                    {generating && <span>Creating new visual...</span>}
+                    {generating && <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}><Icons.Refresh /> Optimizing Visuals...</span>}
                 </div>
             </div>
             <div className="no-print">
@@ -849,7 +865,12 @@ const HeadlineInsight = ({ headline }) => (
        <Icons.Pulse />
     </div>
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px', position: 'relative', zIndex: 1 }}>
-      <h3 style={{ color: '#F6AD55', margin: 0, border: 'none', padding: 0 }}>📊 STRATEGIC HEADLINE</h3>
+      <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+        <div style={{background:'linear-gradient(135deg, #F6AD55, #ED8936)', padding:'8px', borderRadius:'8px', color:'white', display:'flex'}}>
+            <Icons.Strategy />
+        </div>
+        <h3 style={{ color: 'white', margin: 0, border: 'none', padding: 0 }}>STRATEGIC HEADLINE</h3>
+      </div>
       <span style={{ fontSize: '0.75rem', opacity: 0.7, fontStyle: 'italic' }}>Updated: {headline.updated}</span>
     </div>
     <p style={{ fontSize: '1.2rem', lineHeight: '1.7', margin: 0, fontWeight: '300', color: '#E2E8F0', position: 'relative', zIndex: 1 }}>
@@ -1190,8 +1211,8 @@ const TabEvents = ({ data }) => {
                     contents: 'Search "site:visitdanapoint.com/events/" and "site:visitdanapoint.org" for 4 upcoming public events in Dana Point, CA. For each, find the specific venue location (name, address) using Google Maps data. Return JSON array [{"name":"Event","date":"Date","location":"Venue Name","address":"Full Address","rating":"Venue Rating"}].',
                     config: { tools: [{ googleSearch: {} }, { googleMaps: {} }] }
                 });
-                const text = response.text?.replace(/```json/g, '').replace(/```/g, '').trim() || "[]";
-                setLiveEvents(JSON.parse(text));
+                const text = response.text?.trim() || "[]";
+                setLiveEvents(parseJSON(text));
             } catch(e) {
                 // Fallback demo data if API fails or quota
                 setLiveEvents([
@@ -1855,7 +1876,14 @@ const ChatBot = () => {
 const App = () => {
   const [activeTab, setActiveTab] = useState('pulse');
   const [dashboardData, setDashboardData] = useState(INITIAL_DATA);
-  const [newsItems, setNewsItems] = useState<{title: string, url: string, source: string, snippet: string}[]>([]);
+  const [newsItems, setNewsItems] = useState<{title: string, url: string, source: string, snippet: string}[]>([
+        // Initialize with default data so ticker isn't empty on load
+        { title: "Global Tourism Rebounds to Pre-Pandemic Levels", source: "Skift", snippet: "International arrivals hit 96% of 2019 levels.", url: "https://skift.com/" },
+        { title: "California Coastal Travel Report 2025", source: "Visit CA", snippet: "Orange County sees steady growth in RevPAR.", url: "https://www.visitcalifornia.com/" },
+        { title: "Sustainable Tourism: The New Luxury", source: "CoStar", snippet: "High-net-worth travelers prioritize destinations with verified sustainability initiatives.", url: "https://www.costar.com/" },
+        { title: "Dana Point Named Top Coastal Gem", source: "Travel Weekly", snippet: "VDP's strategic focus on events and luxury experiences pays off.", url: "https://www.travelweekly.com/" },
+        { title: "Hospitality Labor Market Stabilizes", source: "Hotel Dive", snippet: "Staffing levels return to normal, improving service scores across luxury sector.", url: "https://www.hoteldive.com/" }
+  ]);
 
   // Centralized News Fetching for Consistency
   useEffect(() => {
@@ -1864,24 +1892,21 @@ const App = () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash', 
-          contents: 'Find 5 recent high-impact tourism industry news articles (CoStar, Skift, Visit CA) relevant to Dana Point or luxury coastal travel. Return JSON array: [{"title": "Headline", "source": "Source Name", "snippet": "Short summary...", "url": "http link"}]. IMPORTANT: All URLs must be REAL and VALID. Use googleSearch.',
+          contents: 'Find 5 recent high-impact tourism industry news articles (CoStar, Skift, Visit CA) relevant to Dana Point or luxury coastal travel. Return strictly a raw JSON array: [{"title": "Headline", "source": "Source Name", "snippet": "Short summary...", "url": "http link"}]. Do not include markdown code blocks. IMPORTANT: All URLs must be REAL and VALID. Use googleSearch.',
           config: { tools: [{ googleSearch: {} }] }
         });
         
         let text = response.text || "[]";
+        // Clean up potential markdown code blocks if the model ignores the prompt
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(text);
-        setNewsItems(Array.isArray(parsed) ? parsed : []);
+        
+        const parsed = parseJSON(text);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            setNewsItems(parsed);
+        }
       } catch (e) {
         console.error("News fetch failed:", e);
-        // Fallback articles on error to prevent empty state
-        setNewsItems([
-            { title: "Global Tourism Rebounds to Pre-Pandemic Levels", source: "Skift", snippet: "International arrivals hit 96% of 2019 levels as luxury travel leads the recovery.", url: "https://skift.com/" },
-            { title: "California Coastal Travel Report 2025", source: "Visit CA", snippet: "Orange County sees steady growth in RevPAR as day-tripper conversion strategies gain traction.", url: "https://www.visitcalifornia.com/" },
-            { title: "Sustainable Tourism: The New Luxury", source: "CoStar", snippet: "High-net-worth travelers prioritize destinations with verified sustainability initiatives.", url: "https://www.costar.com/" },
-            { title: "Dana Point Named Top Coastal Gem", source: "Travel Weekly", snippet: "VDP's strategic focus on events and luxury experiences pays off.", url: "https://www.travelweekly.com/" },
-            { title: "Hospitality Labor Market Stabilizes", source: "Hotel Dive", snippet: "Staffing levels return to normal, improving service scores across luxury sector.", url: "https://www.hoteldive.com/" }
-        ]);
+        // We keep the default/previous items if fetch fails, so the UI doesn't break
       }
     };
     fetchNews();
