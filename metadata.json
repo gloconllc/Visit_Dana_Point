@@ -1,5 +1,7 @@
 {
-  "description": "",
-  "requestFramePermissions": [],
-  "name": "VDP Dashboard"
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "name": "",
+  "description": ""
 }
