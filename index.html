@@ -1,427 +1,291 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Visit Dana Point Strategic Dashboard</title>
-    <!-- Professional VDP Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23006B76'/%3E%3Cpath d='M8 22 L14 16 L18 20 L24 10' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <title>Visit Dana Point Intelligence Suite</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23006B76'/%3E%3Cpath d='M8 22 L14 16 L18 20 L24 10' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
     <style>
       :root {
-        /* VDP Brand Colors - Richer & Deeper */
-        --primary: #006B76; /* VDP Teal */
-        --primary-dark: #004E56;
-        --primary-gradient: linear-gradient(135deg, #006B76 0%, #008C99 100%);
-        --navy: #1A365D; /* Deep Ocean */
-        --navy-dark: #0F2444;
-        --navy-gradient: linear-gradient(180deg, #1A365D 0%, #0a1c36 100%);
-        --accent: #F6AD55; /* Sunset Orange */
-        
-        /* Surfaces */
-        --bg-body: #F0F4F8;
-        --surface-white: rgba(255, 255, 255, 0.95);
-        --surface-glass: rgba(255, 255, 255, 0.85);
-        
-        /* Text */
-        --text-main: #1A202C;
-        --text-secondary: #4A5568;
-        --text-muted: #718096;
-        
-        /* Effects */
-        --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
-        --shadow-md: 0 4px 6px -1px rgba(26, 54, 93, 0.08), 0 2px 4px -1px rgba(26, 54, 93, 0.04);
-        --shadow-lg: 0 10px 15px -3px rgba(26, 54, 93, 0.1), 0 4px 6px -2px rgba(26, 54, 93, 0.05);
-        --glass-blur: blur(12px);
+        --teal: #006B76;
+        --navy: #0A1C36;
+        --dawn: #F8FAFC;
+        --gold: #B8860B;
+        --bright-gold: #FFD700;
+        --text: #1A202C;
       }
       
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box; cursor: none !important; }
 
-      body {
+      body, html {
         margin: 0;
-        font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-        background-color: var(--bg-body);
-        /* Dana Point Coastline Background - slightly adjusted for better visibility */
-        background-image: 
-          linear-gradient(to bottom right, rgba(240, 244, 248, 0.80), rgba(240, 244, 248, 0.90)),
-          url('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=2070&auto=format&fit=crop');
-        background-size: cover;
-        background-attachment: fixed;
-        background-position: center;
-        color: var(--text-main);
-        -webkit-font-smoothing: antialiased;
-        overflow-x: hidden;
-      }
-
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 8px; height: 8px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { 
-        background: #CBD5E0; 
-        border-radius: 10px; 
-      }
-      ::-webkit-scrollbar-thumb:hover { background-color: var(--primary); }
-
-      #root { height: 100vh; display: flex; overflow: hidden; }
-
-      .dashboard-container { display: flex; flex-direction: row; width: 100%; height: 100%; }
-
-      /* --- SIDEBAR --- */
-      .sidebar {
-        width: 260px;
-        background: var(--navy-gradient);
-        color: white;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-        z-index: 50;
-        border-right: 1px solid rgba(255,255,255,0.05);
-        transition: width 0.3s ease;
-      }
-
-      .logo-area {
-        padding: 40px 24px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent);
-        text-align: center;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-      }
-      
-      .logo-text {
-        font-family: 'Playfair Display', serif; 
-        font-weight: 800;
-        font-size: 1.6rem;
-        letter-spacing: 0.02em;
-        color: white;
-        line-height: 1;
-        margin-bottom: 6px;
-      }
-      
-      .logo-sub {
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 0.6rem;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        color: #4FD1C5;
-        font-weight: 700;
-        opacity: 0.9;
-      }
-
-      .nav-links { flex: 1; padding: 24px 12px; overflow-y: auto; }
-
-      .nav-group-label {
-        padding: 20px 16px 8px;
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        color: rgba(255,255,255,0.4);
-        font-weight: 700;
-        letter-spacing: 0.1em;
-      }
-
-      .nav-item {
-        padding: 12px 16px;
-        margin-bottom: 4px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 0.9rem;
-        border-radius: 8px;
-        color: rgba(255,255,255,0.7);
-        font-weight: 500;
-        position: relative;
+        padding: 0;
+        height: 100%;
+        font-family: 'Inter', sans-serif;
+        background-color: var(--dawn);
+        color: var(--text);
         overflow: hidden;
       }
 
-      .nav-item::before {
-        content: '';
-        position: absolute;
-        left: 0; top: 0; bottom: 0; width: 0;
-        background: var(--primary);
-        opacity: 0.1;
-        transition: width 0.3s ease;
-      }
-      .nav-item:hover::before { width: 100%; }
-      
-      .nav-item:hover {
-        color: white;
-        transform: translateX(4px);
-        background: rgba(255,255,255,0.05);
-      }
+      #root { height: 100%; }
 
-      .nav-item.active {
-        background: linear-gradient(90deg, rgba(0, 107, 118, 0.4) 0%, rgba(0, 107, 118, 0.1) 100%);
-        color: white;
-        font-weight: 600;
-        border-left: 3px solid #4FD1C5;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      }
-      
-      /* --- HEADER --- */
-      .top-banner {
-        background: var(--surface-glass);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid rgba(255,255,255,0.4);
-        padding: 16px 40px;
-        flex-shrink: 0;
-        z-index: 40;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-      }
-
-      .top-banner-stats {
-        display: flex;
-        gap: 32px;
-        font-size: 0.9rem;
-        color: #4A5568;
-        font-weight: 500;
-        align-items: center;
-      }
-
-      /* --- CONTENT --- */
-      .main-content {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        display: flex;
-        flex-direction: column;
-        scroll-behavior: smooth;
-      }
-      
-      .content-wrapper {
-        padding: 32px 48px 60px;
-        max-width: 1800px;
-        width: 100%;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 28px;
-      }
-
-      .card {
-        background: var(--surface-white);
-        border-radius: 16px;
-        box-shadow: var(--shadow-md);
-        padding: 28px;
-        border: 1px solid rgba(255,255,255,0.6);
-        transition: box-shadow 0.3s ease, transform 0.3s ease;
-        backdrop-filter: blur(8px);
-        position: relative;
-      }
-      .card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-      }
-
-      .card h3 {
-        margin-top: 0;
-        margin-bottom: 20px;
-        font-family: 'Playfair Display', serif;
-        font-size: 1.25rem;
-        color: var(--navy);
-        font-weight: 700;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        padding-bottom: 12px;
-      }
-
-      /* --- TOOLTIPS (Custom) --- */
-      .chart-container-hover {
-        position: relative;
-      }
-      .chart-container-hover:hover .custom-tooltip-popup {
-        opacity: 1;
-        visibility: visible;
-        transform: translate(-50%, -12px);
-      }
-      .custom-tooltip-popup {
-        opacity: 0;
-        visibility: hidden;
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translate(-50%, 0);
-        background: var(--navy);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        white-space: nowrap;
+      /* Custom Cursor - Osmo Inspired Blob */
+      #custom-cursor {
+        position: fixed;
+        width: 12px;
+        height: 12px;
+        background: var(--teal);
+        border-radius: 50%;
         pointer-events: none;
-        z-index: 100;
-        transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        transform: translate(-50%, -50%);
+        transition: transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.4s ease, width 0.4s ease, height 0.4s ease;
       }
-      .custom-tooltip-popup::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        margin-left: -5px;
-        border-width: 5px;
-        border-style: solid;
-        border-color: var(--navy) transparent transparent transparent;
+      #custom-cursor-follower {
+        position: fixed;
+        width: 44px;
+        height: 44px;
+        border: 2px solid var(--teal);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.4s ease, border-width 0.4s ease;
       }
 
-      /* --- IMPACT PANEL --- */
-      .impact-hero-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        background: white;
-        border-top: 1px solid #EDF2F7;
+      .cursor-hover #custom-cursor {
+        width: 24px;
+        height: 24px;
+        background: var(--bright-gold);
+        box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
       }
-      .impact-hero-metric {
-        padding: 32px;
-        border-right: 1px solid #EDF2F7;
-        transition: background-color 0.3s;
+      .cursor-hover #custom-cursor-follower {
+        border-color: var(--bright-gold);
+        width: 60px;
+        height: 60px;
+        border-width: 3px;
       }
-      .impact-hero-metric:last-child { border-right: none; }
-      .impact-hero-metric:hover { background-color: #F7FAFC; }
 
-      /* --- UTILS --- */
-      .cta-button {
-        background: var(--primary-gradient);
-        color: white;
-        font-weight: 600;
-        padding: 10px 20px;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 0.85rem;
-        box-shadow: 0 4px 12px rgba(0, 107, 118, 0.2);
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .cta-button:hover {
-        background: linear-gradient(135deg, #008C99 0%, #006B76 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(0, 107, 118, 0.3);
-      }
-      .cta-button.secondary {
-        background: transparent;
-        color: var(--primary);
-        border: 1px solid var(--primary);
-        box-shadow: none;
-      }
-      .cta-button.secondary:hover { background: rgba(0, 107, 118, 0.05); }
-
-      .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
-      .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 24px; }
-
-      .tooltip-icon {
-        display: inline-flex;
+      /* Sophisticated Preloader */
+      #preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 11000;
+        display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        width: 18px; height: 18px;
-        border-radius: 50%;
-        background-color: rgba(0,0,0,0.05);
-        color: var(--text-muted);
-        font-size: 11px;
-        font-weight: bold;
-        margin-left: 6px;
-        cursor: help;
-        position: relative;
-      }
-      .tooltip-icon:hover .tooltip-content {
-        visibility: visible;
-        opacity: 1;
-        transform: translate(-50%, -8px);
-      }
-      .tooltip-content {
-        visibility: hidden;
-        width: 240px;
-        background-color: var(--navy);
-        color: #fff;
-        text-align: left;
-        border-radius: 6px;
-        padding: 12px;
-        position: absolute;
-        z-index: 1000;
-        bottom: 130%;
-        left: 50%;
-        transform: translate(-50%, 0);
-        opacity: 0;
-        transition: opacity 0.3s ease, transform 0.3s ease;
-        font-size: 0.75rem;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-        pointer-events: none;
-        line-height: 1.4;
-      }
-
-      .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-      /* Ticker */
-      @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-      .ticker-wrap {
-        width: 100%;
-        overflow: hidden;
-        background: #004E56;
         color: white;
-        height: 42px;
-        display: flex;
-        align-items: center;
+        background-color: var(--navy);
+        transition: opacity 1.8s cubic-bezier(0.85, 0, 0.15, 1);
       }
-      .ticker-content {
-        display: inline-block;
-        white-space: nowrap;
-        animation: ticker 120s linear infinite;
-        padding-left: 100%;
-      }
-      .ticker-content:hover { animation-play-state: paused; }
-      .ticker-item {
-        display: inline-block;
-        padding: 0 2.5rem;
-        border-right: 1px solid rgba(255,255,255,0.15);
-      }
-      .ticker-item a { color: white; text-decoration: none; }
-      .ticker-item a:hover { color: #81E6D9; text-decoration: underline; }
 
-      .app-footer {
-        margin-top: 60px;
-        border-top: 1px solid rgba(0,0,0,0.05);
-        padding: 32px 0;
+      #preloader-bg {
+        position: absolute;
+        inset: 0;
+        background-image: url('https://images.unsplash.com/photo-1544923246-77307dd654ca?q=80&w=1920&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        filter: brightness(0.25) contrast(1.1);
+        z-index: -2;
+        transform: scale(1.15);
+        animation: zoomOut 15s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+      }
+
+      #preloader-overlay {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, transparent 0%, var(--navy) 100%);
+        z-index: -1;
+      }
+
+      @keyframes zoomOut {
+        from { transform: scale(1.15); }
+        to { transform: scale(1.02); }
+      }
+
+      .preloader-content {
         text-align: center;
-        color: var(--text-muted);
-        font-size: 0.8rem;
+        position: relative;
+        max-width: 600px;
       }
 
-      @media (max-width: 768px) {
-        .dashboard-container { flex-direction: column; }
-        .sidebar { width: 100%; position: sticky; top: 0; height: auto; z-index: 100; border-right: none; }
-        .nav-links { display: flex; overflow-x: auto; padding: 12px; gap: 12px; }
-        .nav-group-label, .logo-area { display: none; }
-        .nav-item { padding: 8px 16px; margin: 0; white-space: nowrap; background: rgba(255,255,255,0.1); border-left: none; }
-        .nav-item.active { background: #4FD1C5; color: #004E56; }
-        .grid-2, .grid-4 { grid-template-columns: 1fr; }
-        .top-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
-        .impact-hero-grid { grid-template-columns: 1fr; }
-        .impact-hero-metric { border-right: none; border-bottom: 1px solid #EDF2F7; }
+      .preloader-title { 
+        font-family: 'Playfair Display', serif; 
+        font-size: 5rem; 
+        font-weight: 900; 
+        color: white;
+        letter-spacing: -0.04em;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: revealText 1.8s cubic-bezier(0.23, 1, 0.32, 1) 0.6s forwards;
       }
+
+      .preloader-subtitle {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        letter-spacing: 0.5em;
+        font-weight: 800;
+        color: var(--teal);
+        text-transform: uppercase;
+        opacity: 0;
+        animation: revealSubtitle 2.2s cubic-bezier(0.23, 1, 0.32, 1) 1.4s forwards;
+      }
+
+      .preloader-status {
+        margin-top: 60px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        color: rgba(255, 255, 255, 0.4);
+        display: flex;
+        justify-content: center;
+        gap: 1px;
+        height: 1.2rem;
+      }
+
+      .status-char {
+        display: inline-block;
+        opacity: 0;
+        filter: blur(10px);
+        transform: translateY(12px);
+        animation: charAppear 3.5s cubic-bezier(0.19, 1, 0.22, 1) forwards infinite;
+      }
+
+      @keyframes charAppear {
+        0% { opacity: 0; filter: blur(10px); transform: translateY(12px); }
+        15% { opacity: 1; filter: blur(0); transform: translateY(0); }
+        85% { opacity: 1; filter: blur(0); transform: translateY(0); }
+        100% { opacity: 0; filter: blur(6px); transform: translateY(-8px); }
+      }
+
+      @keyframes revealText {
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes revealSubtitle {
+        to { opacity: 1; }
+      }
+
+      .vdp-silhouette {
+        position: absolute;
+        bottom: -120px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 160%;
+        height: auto;
+        opacity: 0.04;
+        pointer-events: none;
+        z-index: -1;
+        animation: drift 25s linear infinite;
+      }
+
+      @keyframes drift {
+        0% { transform: translateX(-53%) scale(1); }
+        50% { transform: translateX(-47%) scale(1.08); }
+        100% { transform: translateX(-53%) scale(1); }
+      }
+
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(0, 107, 118, 0.15); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--teal); }
+
     </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "vite": "https://esm.sh/vite@^7.3.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.0",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
 </head>
   <body>
-    <div id="root">
-        <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #006B76; font-family: 'Segoe UI', sans-serif;">
-            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem;">VISIT DANA POINT</div>
-            <div style="font-size: 1rem; opacity: 0.7;">Loading Intelligence Dashboard...</div>
-        </div>
+    <div id="custom-cursor"></div>
+    <div id="custom-cursor-follower"></div>
+    
+    <div id="preloader">
+      <div id="preloader-bg"></div>
+      <div id="preloader-overlay"></div>
+      <div class="preloader-content">
+        <svg class="vdp-silhouette" viewBox="0 0 1000 200" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 200V150C50 140 100 160 150 155C200 150 250 120 300 110C350 100 400 130 450 125C500 120 550 80 600 75C650 70 700 100 750 105C800 110 850 60 900 55C950 50 1000 80 1000 80V200H0Z" />
+        </svg>
+        <div class="preloader-title">Visit Dana Point</div>
+        <div class="preloader-subtitle">Intelligence Suite 12.0</div>
+        <div class="preloader-status" id="status-text"></div>
+      </div>
     </div>
+
+    <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
+    <script>
+      const statusText = "Synchronizing Global Stewardship Streams...";
+      const container = document.getElementById('status-text');
+      statusText.split('').forEach((char, i) => {
+        const span = document.createElement('span');
+        span.className = 'status-char';
+        span.textContent = char === ' ' ? '\u00A0' : char;
+        span.style.animationDelay = (i * 0.03) + 's';
+        container.appendChild(span);
+      });
+
+      const cursor = document.getElementById('custom-cursor');
+      const follower = document.getElementById('custom-cursor-follower');
+      
+      let mouseX = 0, mouseY = 0;
+      let ballX = 0, ballY = 0;
+      let followerX = 0, followerY = 0;
+      
+      const speed = 0.15;
+      const followerSpeed = 0.1;
+
+      function animate() {
+        ballX += (mouseX - ballX) * speed;
+        ballY += (mouseY - ballY) * speed;
+        cursor.style.left = ballX + 'px';
+        cursor.style.top = ballY + 'px';
+
+        followerX += (mouseX - followerX) * followerSpeed;
+        followerY += (mouseY - followerY) * followerSpeed;
+        follower.style.left = followerX + 'px';
+        follower.style.top = followerY + 'px';
+
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.getElementById('preloader').style.opacity = '0';
+          setTimeout(() => document.getElementById('preloader').remove(), 1800);
+        }, 4500);
+      });
+
+      document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('button, a, .sb-item, .p-bubble, .ticker-bar, .mu-card, .btn-vdp, .ni-icon-wrap, input, textarea')) {
+          document.body.classList.add('cursor-hover');
+        }
+      });
+      document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('button, a, .sb-item, .p-bubble, .ticker-bar, .mu-card, .btn-vdp, .ni-icon-wrap, input, textarea')) {
+          document.body.classList.remove('cursor-hover');
+        }
+      });
+    </script>
   </body>
 </html>
