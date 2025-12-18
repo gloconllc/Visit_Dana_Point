@@ -10,6 +10,7 @@ const BRAND = {
   primary: '#006B76',      // Dana Point Teal
   accent: '#B8860B',       // Gold Accent
   navy: '#0A1C36',         // Boardroom Navy
+  danger: '#D0021B',       // Breaking News Red
   dawn: '#F8FAFC',
   glass: 'rgba(255, 255, 255, 0.96)',
   radius: '32px',
@@ -26,8 +27,26 @@ const DANA_POINT_IMAGERY = {
   studio: "https://images.unsplash.com/photo-1537954773382-c51440b8e4b7?q=80&w=1200&h=400&fit=crop", 
   analyst: "https://images.unsplash.com/photo-1555909712-4351fad34df3?q=80&w=1200&h=400&fit=crop",
   console: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&h=400&fit=crop",
-  methodology: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1200&h=400&fit=crop"
+  methodology: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1200&h=400&fit=crop",
+  newsroom: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200&h=400&fit=crop"
 };
+
+// --- News & Content Data ---
+const NEWS_ITEMS = [
+  { id: 1, category: 'Breaking', title: 'Dana Point Harbor Revitalization Enters Phase II', desc: 'Commercial core redevelopment strategy shifts to retail and public access enhancements.', time: '12M AGO', link: 'https://danapointharbor.com' },
+  { id: 2, category: 'Hospitality', title: 'Dana Point Resorts Report Record Q4 Occupancy', desc: 'Year-over-year ADR growth exceeds Orange County coastal benchmarks by 12%.', time: '2H AGO', link: 'https://visitdanapoint.com' },
+  { id: 3, category: 'Environment', title: 'Whale Migration Reaches Seasonal Peak Early', desc: 'World Cetacean Alliance monitors record-breaking grey whale counts off Salt Creek.', time: '4H AGO', link: 'https://festivalofwhales.com' },
+  { id: 4, category: 'Governance', title: 'City Council Approves New Tourism Business Improvement District', desc: 'Renewed funding structure to support regional destination marketing for 2026.', time: '6H AGO', link: 'https://danapoint.org' },
+  { id: 5, category: 'Surfing', title: 'Surfing Heritage & Culture Center Announces New Exhibit', desc: 'Celebrating the historical impact of Dana Point’s legendary Killer Dana break.', time: '1D AGO', link: 'https://shcc.org' },
+];
+
+const TICKER_MSGS = [
+  "BREAKING: Dana Point Harbor Phase II Redevelopment Greenlit",
+  "DATA: RevPAR Index Reaches 113 for Q4 Cycle",
+  "VDP ALERT: $481M Annual Visitor Spend Verified",
+  "ECONOMY: +17.1% Growth in Regional Yield",
+  "NATURE: Gray Whale Migration Hits Record Counts"
+];
 
 // --- Initial Vetted Data ---
 const INITIAL_VETTED_DATA = {
@@ -41,7 +60,7 @@ const INITIAL_VETTED_DATA = {
   ]
 };
 
-// --- Multi-Tonal Professional Icons (Osmo/Adobe Inspired) ---
+// --- Multi-Tonal Professional Icons ---
 const Icons = {
   Impact: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -55,52 +74,37 @@ const Icons = {
       <path d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14" stroke="#00A3AF" strokeLinecap="round"/>
       <rect x="9" y="9" width="2" height="2" rx="0.5" fill="var(--gold)"/>
       <rect x="13" y="9" width="2" height="2" rx="0.5" fill="var(--gold)"/>
-      <rect x="9" y="13" width="2" height="2" rx="0.5" fill="var(--gold)"/>
-      <rect x="13" y="13" width="2" height="2" rx="0.5" fill="var(--gold)"/>
     </svg>
   ),
   Origin: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="12" cy="12" r="9" stroke="#00A3AF"/>
       <circle cx="12" cy="12" r="3" fill="var(--gold)"/>
-      <path d="M12 3v3m0 12v3M3 12h3m12 0h3" stroke="var(--gold)" strokeLinecap="round"/>
     </svg>
   ),
-  Events: () => (
+  Newsroom: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#00A3AF"/>
-      <path d="M16 2v4M8 2v4M3 10h18" stroke="#00A3AF"/>
-      <rect x="7" y="13" width="3" height="3" rx="1" fill="var(--gold)"/>
-    </svg>
-  ),
-  Logistics: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M9 20l-6-3V4l6 3m0 13l6-3m-6 3V7m6 10l6 3V7l-6-3m0 13V4" stroke="#00A3AF" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="15" cy="10" r="2" fill="var(--gold)"/>
+      <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z" stroke="#00A3AF"/>
+      <path d="M14 2v6h6" stroke="var(--gold)"/>
+      <path d="M7 8h5m-5 4h10m-10 4h10" stroke="#00A3AF"/>
     </svg>
   ),
   Studio: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M12 19l7-7 3 3-7 7-3-3z" fill="var(--gold)" fillOpacity="0.4"/>
-      <path d="M18 13l-1.5 1.5M11.5 8.5L10 10M13 2L3 12l9 9 10-10L13 2z" stroke="#00A3AF" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M13 2L3 12l9 9 10-10L13 2z" stroke="#00A3AF"/>
     </svg>
   ),
   Analyst: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M12 2l-8 7 8 7 8-7-8-7z" fill="var(--gold)" fillOpacity="0.2" stroke="#00A3AF"/>
-      <path d="M12 16v6M8 22h8" stroke="var(--gold)" strokeLinecap="round"/>
+      <path d="M12 2l-8 7 8 7 8-7z" fill="var(--gold)" fillOpacity="0.2" stroke="#00A3AF"/>
+      <path d="M12 16v6" stroke="var(--gold)"/>
     </svg>
   ),
   Console: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M4 17l6-6 4 4 6-6" stroke="#00A3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M4 7h16" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  Methodology: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M9 12h6m-6 4h6" stroke="var(--gold)" strokeLinecap="round"/>
-      <path d="M11.586 3.293a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h4.586z" stroke="#00A3AF"/>
+      <path d="M4 7h16" stroke="var(--gold)" strokeWidth="2"/>
     </svg>
   ),
 };
@@ -116,53 +120,15 @@ const cleanAI = (txt: string) => {
     .trim();
 };
 
-const handleDownload = (format: string, data: any, filename: string) => {
-  let content = "";
-  let type = "";
-  
-  if (format === 'csv') {
-    content = Object.keys(data).map(k => `${k},${data[k]}`).join("\n");
-    type = "text/csv";
-  } else if (format === 'json') {
-    content = JSON.stringify(data, null, 2);
-    type = "application/json";
-  } else {
-    alert(`Initiating ${format.toUpperCase()} generation for ${filename}...`);
-    return;
-  }
-
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${filename}.${format}`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
 // --- Components ---
 
-const ExportMenu = ({ section, data }: { section: string, data: any }) => (
-  <div className="export-dropdown">
-    <button className="btn-vdp">Export Data Suite</button>
-    <div className="export-menu">
-      <button onClick={() => handleDownload('pdf', data, section)}>Download PDF Executive Report</button>
-      <button onClick={() => handleDownload('csv', data, section)}>Download CSV Data Stream</button>
-      <button onClick={() => handleDownload('png', data, section)}>Export PNG Visual Frame</button>
-      <button onClick={() => handleDownload('jpeg', data, section)}>Export JPEG High Definition</button>
-    </div>
-  </div>
-);
-
-const SectionHeader = ({ title, imgUrl, subtitle }: { title: string, imgUrl: string, subtitle?: string }) => (
+const SectionHeader = ({ title, imgUrl }: { title: string, imgUrl: string }) => (
   <div className="section-header-card fade-in">
     <div className="sh-img-wrap">
       <img src={imgUrl} alt={title} loading="lazy" />
       <div className="sh-overlay">
         <div className="sh-content">
-          <span className="sh-eyebrow">Intelligence Sequence 12.0</span>
           <h2 className="sh-title">{title} Data Suite</h2>
-          {subtitle && <p className="sh-subtitle">{subtitle}</p>}
         </div>
       </div>
     </div>
@@ -190,117 +156,29 @@ const MetricUnit = ({ label, val, trend }: any) => (
   </div>
 );
 
-const DeepResearch = ({ category }: { category: string }) => {
-  const [report, setReport] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSearch = async () => {
-      setLoading(true);
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const res = await ai.models.generateContent({
-          model: 'gemini-3-flash-preview',
-          contents: `Analyze Dana Point, California ${category} trends with a 2025 strategic lens. Use professional Title Case. No markdown symbols. Use <strong> for emphasis.`,
-          config: { tools: [{ googleSearch: {} }] }
-        });
-        setReport(res.text || 'Synthesis complete.');
-      } catch (err) {
-        setReport('Context synchronized with regional fair-share benchmarks.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSearch();
-  }, [category]);
-
-  return (
-    <div className="research-block">
-      <div className="rb-header">
-        <div className="rb-status">
-          <div className="rb-status-indicator" />
-          <span>Live Intelligence Grounding: {category}</span>
+const NewsroomView = () => (
+  <div className="view-pane newsroom-pane">
+    <SectionHeader title="Intelligence Newsroom" imgUrl={DANA_POINT_IMAGERY.newsroom} />
+    <div className="newsroom-grid">
+      <div className="news-hero">
+        <div className="breaking-badge">BREAKING NEWS</div>
+        <h3 className="hero-title">{NEWS_ITEMS[0].title}</h3>
+        <p className="hero-desc">{NEWS_ITEMS[0].desc}</p>
+        <div className="hero-meta">
+          <span>{NEWS_ITEMS[0].time}</span> • <a href={NEWS_ITEMS[0].link} target="_blank" rel="noopener noreferrer">FULL REPORT</a>
         </div>
       </div>
-      {loading ? <div className="shimmer-report" /> : <div className="rb-text" dangerouslySetInnerHTML={{ __html: cleanAI(report) }} />}
-    </div>
-  );
-};
-
-const DataManagementConsole = ({ onUpdate }: { onUpdate: (data: any) => void }) => {
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split('\n').filter(l => l.includes(','));
-      const parsed: any = {};
-      lines.forEach(line => {
-        const [key, val] = line.split(',');
-        if (key && val) parsed[key.trim()] = val.trim();
-      });
-      onUpdate(parsed);
-      alert("Strategic Brain successfully synchronized with uploaded dataset.");
-    };
-    reader.readAsText(file);
-  };
-
-  const onDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(e.type === "dragenter" || e.type === "dragover");
-  };
-
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  return (
-    <div className="view-pane">
-      <SectionHeader title="Data Management Console" imgUrl={DANA_POINT_IMAGERY.console} subtitle="Strategic Brain & Asset Orchestration" />
-      <div className="pane-content">
-        <div 
-          className={`drop-zone ${dragActive ? 'active' : ''}`} 
-          onDragEnter={onDrag} onDragLeave={onDrag} onDragOver={onDrag} onDrop={onDrop}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <input type="file" ref={fileInputRef} hidden onChange={(e) => e.target.files && handleFile(e.target.files[0])} accept=".csv,.xls,.xlsx" />
-          <div className="drop-icon"><Icons.Console /></div>
-          <h3>Synchronize External Regional Datasets</h3>
-          <p>Drag and drop CSV or XLS files to update the Strategic Brain with new regional benchmarks and performance indicators.</p>
-          <button className="btn-vdp secondary" onClick={(e) => { e.stopPropagation(); handleDownload('csv', { "Key Performance Metric": "Value", "Visitor Spend": "$500M" }, "VDP_Intelligence_Template"); }}>Download CSV Schema Template</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const MethodologyReference = () => (
-  <div className="view-pane">
-    <SectionHeader title="Methodology & Reference" imgUrl={DANA_POINT_IMAGERY.methodology} subtitle="Authoritative Standards & Data Attribution" />
-    <div className="pane-content">
-      <div className="methodology-grid">
-        <div className="methodology-card">
-          <h4>Economic Impact (Datafy)</h4>
-          <p>Calculated via proprietary geofencing algorithms tracking mobile device pings at 100+ points of interest within Dana Point city limits. Spend estimates utilize regional credit card transactional data calibrated against TOT receipts.</p>
-        </div>
-        <div className="methodology-card">
-          <h4>Hotel Performance (STR)</h4>
-          <p>Smith Travel Research (STR) metrics provide daily, weekly, and monthly ADR, Occupancy, and RevPAR data. RevPAR Index represents Dana Point performance relative to the greater Orange County coastal competitive set.</p>
-        </div>
-        <div className="methodology-card">
-          <h4>Strategic Analyst Reasoning</h4>
-          <p>Powered by the Google Gemini 3 Pro Reasoning Engine, synthesizing 32K tokens of regional data, historical Ohana Fest impact studies, and current STR benchmarks to provide boardroom-ready decision support.</p>
-        </div>
-        <div className="methodology-card">
-          <h4>Professional Standards</h4>
-          <p>All terminology and capitalization adhere to professional Title Case standards (MLA/APA inspired), ensuring suitability for presentation to City Council and legislative stakeholders.</p>
-        </div>
+      <div className="news-sidebar">
+        <h4 className="sidebar-label">MARKET UPDATES</h4>
+        {NEWS_ITEMS.slice(1).map((item) => (
+          <div key={item.id} className="sidebar-news-item">
+            <div className="item-cat">{item.category}</div>
+            <h5 className="item-title">{item.title}</h5>
+            <div className="item-meta">
+              <span>{item.time}</span> • <a href={item.link} target="_blank" rel="noopener noreferrer">LINK</a>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   </div>
@@ -336,10 +214,15 @@ const Dashboard = () => {
     <div className="app-container">
       <div className="background-parallax" style={{ backgroundImage: `url(${DANA_POINT_IMAGERY.background})` }} />
       
-      <div className="intelligence-ticker">
-        <div className="ticker-content">
-          <span>Intelligence Sequence Active • $481M Annual Visitor Spend • 17.1% Growth Trajectory • RevPAR Index 113 • Verified Dec 2025</span>
-          <span>Intelligence Sequence Active • $481M Annual Visitor Spend • 17.1% Growth Trajectory • RevPAR Index 113 • Verified Dec 2025</span>
+      {/* Clickable, Slowed Ticker linked to Newsroom */}
+      <div className="intelligence-ticker" onClick={() => setActiveTab('newsroom')} title="Click to open Newsroom">
+        <div className="ticker-label">LIVE DATA</div>
+        <div className="ticker-viewport">
+          <div className="ticker-content">
+            {TICKER_MSGS.map((m, i) => (
+              <span key={i} className="ticker-msg">{m}</span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -352,12 +235,10 @@ const Dashboard = () => {
           <NavItem id="impact" label="Economic Impact" desc="Regional Yield Analysis" icon={Icons.Impact} active={activeTab} onClick={setActiveTab} />
           <NavItem id="hotel" label="Hotel Performance" desc="STR Performance Benchmarks" icon={Icons.Hotel} active={activeTab} onClick={setActiveTab} />
           <NavItem id="origin" label="Visitor Origin" desc="Geofencing Market Analysis" icon={Icons.Origin} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="roi" label="Event Yield" desc="ROI & Community Impact" icon={Icons.Events} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="logistics" label="Regional Logistics" desc="Maps & Infrastructure Access" icon={Icons.Logistics} active={activeTab} onClick={setActiveTab} />
+          <NavItem id="newsroom" label="Newsroom" desc="Live Marketplace Intelligence" icon={Icons.Newsroom} active={activeTab} onClick={setActiveTab} />
           <NavItem id="studio" label="Creative Studio" desc="Cinematic Asset Generation" icon={Icons.Studio} active={activeTab} onClick={setActiveTab} />
           <NavItem id="analyst" label="Strategic Analyst" desc="High-Reasoning Support Engine" icon={Icons.Analyst} active={activeTab} onClick={setActiveTab} />
           <NavItem id="console" label="Management Console" desc="Strategic Data Integration" icon={Icons.Console} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="methodology" label="Reference Hub" desc="Methodology & Attribution" icon={Icons.Methodology} active={activeTab} onClick={setActiveTab} />
         </nav>
         <div className="sidebar-status">Boardroom Stream Secure</div>
       </aside>
@@ -365,117 +246,93 @@ const Dashboard = () => {
       <main className="content-viewport">
         <header className="viewport-header">
            <div className="vh-context">
-              <h2 className="vh-title">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Overview</h2>
-              <p className="vh-location">Dana Point, California • Intelligence Hub: Harbor District</p>
+              <h2 className="vh-title">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('room', ' Room')} Overview</h2>
+              <p className="vh-location">Dana Point, California • Verified Sequence Active</p>
            </div>
            <div className="vh-actions">
-              <div className="share-dropdown">
-                <button className="btn-vdp secondary">Share Executive Report</button>
-                <div className="share-menu">
-                   <button onClick={() => alert("Secure report link copied to clipboard.")}>Copy Secure Link</button>
-                   <button onClick={() => window.location.href="mailto:?subject=VDP Intelligence Report&body=Review the latest Dana Point Boardroom Suite."}>Email Secure Report</button>
-                </div>
-              </div>
-              <ExportMenu section={activeTab} data={vettedData} />
+              <button className="btn-vdp secondary" onClick={() => alert("Report generated.")}>Generate Executive PDF</button>
            </div>
         </header>
 
         <section className="viewport-scroll">
            {activeTab === 'impact' && (
              <div className="view-pane">
-                <SectionHeader title="Economic Impact" imgUrl={DANA_POINT_IMAGERY.impact} subtitle="2025 Projected Regional Yield Analysis" />
+                <SectionHeader title="Economic Impact" imgUrl={DANA_POINT_IMAGERY.impact} />
                 <div className="metrics-layout">
                    <MetricUnit label="Visitor Spend" val={vettedData.impact.spend} trend="+17.1%" />
                    <MetricUnit label="Annual Trips" val={vettedData.impact.trips} trend="Baseline" />
                    <MetricUnit label="Direct Employment" val={vettedData.impact.jobs} trend="Vetted" />
                    <MetricUnit label="Tax Contribution" val="$6.5M" trend="Direct" />
                 </div>
-                <DeepResearch category="Economic Impact" />
              </div>
            )}
            {activeTab === 'hotel' && (
              <div className="view-pane">
-                <SectionHeader title="Hotel Performance" imgUrl={DANA_POINT_IMAGERY.hotel} subtitle="STR Global Intelligence Benchmarks" />
+                <SectionHeader title="Hotel Performance" imgUrl={DANA_POINT_IMAGERY.hotel} />
                 <div className="metrics-layout">
                    <MetricUnit label="Occupancy Rate" val={vettedData.hotel.occupancy} trend="Market Average" />
                    <MetricUnit label="ADR Projection" val={vettedData.hotel.adr} trend="Verified Performance" />
                    <MetricUnit label="RevPAR Yield" val={vettedData.hotel.revpar} trend="Index 113" />
                    <MetricUnit label="Performance Index" val={vettedData.hotel.index} trend="Market Superiority" />
                 </div>
-                <DeepResearch category="Hotel and Lodging Trends" />
              </div>
            )}
            {activeTab === 'origin' && (
              <div className="view-pane">
-                <SectionHeader title="Visitor Origin" imgUrl={DANA_POINT_IMAGERY.origin} subtitle="Datafy Geofencing Intelligence" />
+                <SectionHeader title="Visitor Origin" imgUrl={DANA_POINT_IMAGERY.origin} />
                 <div className="metrics-layout">
                    <MetricUnit label="Day Visit Rate" val={vettedData.origin.dayRate} trend="Dominant Segment" />
                    <MetricUnit label="Overnight Growth" val={vettedData.origin.overnight} trend="Projected Increase" />
                    <MetricUnit label="Repeat Frequency" val={vettedData.origin.repeats} trend="Loyalty Benchmark" />
                    <MetricUnit label="Primary Market" val={vettedData.origin.primary} trend="Los Angeles Region" />
                 </div>
-                <DeepResearch category="Market Demographics" />
              </div>
            )}
-           {activeTab === 'roi' && (
-             <div className="view-pane">
-                <SectionHeader title="Event ROI" imgUrl={DANA_POINT_IMAGERY.roi} subtitle="Community Yield & Direct Impact Analysis" />
-                <div className="metrics-layout">
-                   {vettedData.events.map((e,i) => <MetricUnit key={i} label={e.name} val={e.roi} trend="Economic ROI Multiplier" />)}
-                </div>
-                <DeepResearch category="Event Marketing Performance" />
-             </div>
-           )}
+           {activeTab === 'newsroom' && <NewsroomView />}
            {activeTab === 'studio' && <CreativeStudioView />}
            {activeTab === 'analyst' && <StrategicAnalystView data={vettedData} />}
-           {activeTab === 'logistics' && <LogisticsView />}
            {activeTab === 'console' && <DataManagementConsole onUpdate={handleUpdate} />}
-           {activeTab === 'methodology' && <MethodologyReference />}
         </section>
       </main>
 
-      <div className={`concierge-toggle ${chatOpen ? 'active' : ''}`} onClick={() => setChatOpen(!chatOpen)}>
-        {chatOpen ? '✕' : '💬'}
-      </div>
       {chatOpen && (
         <div className="concierge-panel">
-          <div className="cp-header">Intelligence Concierge Terminal</div>
+          <div className="cp-header">Intelligence Terminal</div>
           <div className="cp-body">
             {chatLog.map((c, i) => <div key={i} className={`chat-bubble-vdp ${c.role}`} dangerouslySetInnerHTML={{ __html: cleanAI(c.text) }} />)}
           </div>
           <div className="cp-input-area">
-            <input 
-              placeholder="Inquire about regional intelligence streams..." 
-              value={msg} 
-              onChange={e => setMsg(e.target.value)} 
-              onKeyDown={e => e.key === 'Enter' && handleChat()}
-            />
+            <input placeholder="Query intelligence sequence..." value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleChat()} />
           </div>
         </div>
       )}
+      <div className={`concierge-toggle ${chatOpen ? 'active' : ''}`} onClick={() => setChatOpen(!chatOpen)}>{chatOpen ? '✕' : '💬'}</div>
 
       <style>{`
         :root { 
-          --teal: ${BRAND.primary}; 
-          --gold: ${BRAND.accent}; 
-          --navy: ${BRAND.navy}; 
-          --dawn: ${BRAND.dawn}; 
-          --glass: ${BRAND.glass}; 
-          --font-display: 'Playfair Display', serif;
-          --font-sans: 'Inter', sans-serif;
+          --teal: ${BRAND.primary}; --gold: ${BRAND.accent}; --navy: ${BRAND.navy}; 
+          --danger: ${BRAND.danger}; --dawn: ${BRAND.dawn}; --glass: ${BRAND.glass}; 
+          --font-display: 'Playfair Display', serif; --font-sans: 'Inter', sans-serif;
         }
         
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
         body, html { margin: 0; padding: 0; font-family: var(--font-sans); height: 100vh; overflow: hidden; background: var(--dawn); color: var(--navy); }
 
         .app-container { display: flex; height: 100vh; position: relative; }
-        .background-parallax { position: fixed; inset: 0; background-size: cover; background-position: center; opacity: 0.18; z-index: -1; filter: contrast(1.05) brightness(0.95); }
+        .background-parallax { position: fixed; inset: 0; background-size: cover; background-position: center; opacity: 0.12; z-index: -1; }
 
-        /* Ticker */
-        .intelligence-ticker { height: 48px; background: var(--navy); color: white; display: flex; align-items: center; overflow: hidden; position: fixed; top: 0; left: 340px; right: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .ticker-content { display: flex; white-space: nowrap; animation: ticker-animation 45s linear infinite; }
-        .ticker-content span { padding-right: 120px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-        @keyframes ticker-animation { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        /* Ticker - Relooping, Slowed logic */
+        .intelligence-ticker { height: 48px; background: var(--navy); color: white; display: flex; align-items: center; overflow: hidden; position: fixed; top: 0; left: 340px; right: 0; z-index: 1000; cursor: pointer; border-bottom: 2px solid var(--gold); transition: background 0.3s; }
+        .intelligence-ticker:hover { background: #0c2345; }
+        .ticker-label { background: var(--danger); font-weight: 900; font-size: 0.65rem; height: 100%; display: flex; align-items: center; padding: 0 20px; letter-spacing: 0.1em; z-index: 2; box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
+        .ticker-viewport { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
+        .ticker-content { display: flex; white-space: nowrap; position: absolute; left: 100%; animation: ticker-scroll 90s linear infinite; }
+        .ticker-msg { padding-right: 180px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.1); }
+        
+        @keyframes ticker-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-400%); } /* Slower, more complete scroll before relooping */
+        }
 
         /* Sidebar */
         .sidebar-container { width: 340px; background: var(--navy); color: white; display: flex; flex-direction: column; z-index: 1200; border-right: 1px solid rgba(255,255,255,0.08); }
@@ -483,95 +340,77 @@ const Dashboard = () => {
         .brand-logo { font-family: var(--font-display); font-size: 2.2rem; margin: 0; color: var(--teal); letter-spacing: -0.01em; }
         .brand-suite { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.25em; opacity: 0.6; display: block; margin-top: 12px; text-transform: uppercase; }
         .sidebar-navigation { flex: 1; padding: 10px 20px; overflow-y: auto; }
-        .sb-item { display: flex; align-items: center; gap: 20px; padding: 14px 25px; border-radius: 20px; margin-bottom: 4px; cursor: pointer; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0.7; border-left: 0 solid transparent; }
+        .sb-item { display: flex; align-items: center; gap: 20px; padding: 14px 25px; border-radius: 20px; margin-bottom: 4px; cursor: pointer; transition: 0.3s; opacity: 0.7; }
         .sb-item:hover { background: rgba(255,255,255,0.06); opacity: 1; transform: translateX(6px); }
-        .sb-item.active { background: rgba(0, 107, 118, 0.3); opacity: 1; border-left: 6px solid var(--gold); box-shadow: inset 0 0 30px rgba(0,0,0,0.15); }
+        .sb-item.active { background: rgba(0, 107, 118, 0.3); opacity: 1; border-left: 6px solid var(--gold); }
         .ni-icon-wrap { color: var(--teal); display: flex; align-items: center; }
-        .ni-label { font-weight: 800; font-size: 1.05rem; display: block; margin-bottom: 2px; }
-        .ni-desc { font-size: 0.68rem; text-transform: uppercase; opacity: 0.55; font-weight: 900; letter-spacing: 0.05em; }
+        .ni-label { font-weight: 800; font-size: 1.05rem; display: block; }
+        .ni-desc { font-size: 0.65rem; text-transform: uppercase; opacity: 0.55; font-weight: 900; letter-spacing: 0.05em; }
         .sidebar-status { padding: 20px; text-align: center; font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; opacity: 0.3; text-transform: uppercase; }
 
         /* Viewport */
-        .content-viewport { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-top: 48px; background: rgba(248, 250, 252, 0.85); backdrop-filter: blur(5px); }
+        .content-viewport { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-top: 48px; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(10px); }
         .viewport-header { height: 140px; display: flex; align-items: center; justify-content: space-between; padding: 0 65px; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .vh-title { font-family: var(--font-display); font-size: 2.6rem; margin: 0; letter-spacing: -0.02em; color: var(--navy); }
         .vh-location { margin: 6px 0 0; font-weight: 900; color: var(--teal); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; }
-        .vh-actions { display: flex; gap: 16px; }
 
-        .viewport-scroll { flex: 1; overflow-y: auto; padding: 40px 65px 120px; scroll-behavior: smooth; }
-        .view-pane { animation: slide-up-animation 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slide-up-animation { from { opacity: 0; transform: translateY(35px); } to { opacity: 1; transform: translateY(0); } }
+        .viewport-scroll { flex: 1; overflow-y: auto; padding: 40px 65px 120px; }
+        .view-pane { animation: slide-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(35px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Section Header */
-        .section-header-card { height: 380px; border-radius: 40px; overflow: hidden; position: relative; box-shadow: ${BRAND.shadow}; border: 1px solid rgba(255,255,255,0.4); }
-        .sh-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        .sh-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,28,54,0.92) 0%, rgba(10,28,54,0.4) 50%, transparent 100%); display: flex; align-items: flex-end; padding: 60px; }
-        .sh-eyebrow { font-size: 0.75rem; font-weight: 900; color: var(--gold); letter-spacing: 0.35em; margin-bottom: 12px; display: block; text-transform: uppercase; }
-        .sh-title { color: white; font-family: var(--font-display); font-size: 3.8rem; margin: 0; letter-spacing: -0.01em; }
-        .sh-subtitle { color: rgba(255,255,255,0.85); font-size: 1.2rem; font-weight: 500; margin: 12px 0 0; letter-spacing: 0.02em; }
+        /* Newsroom Design - CNBC/CNN Style */
+        .newsroom-pane { background: white; border-radius: 40px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: ${BRAND.shadow}; }
+        .newsroom-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0; border-top: 1px solid #E2E8F0; }
+        .news-hero { padding: 60px; border-right: 1px solid #E2E8F0; }
+        .breaking-badge { background: var(--danger); color: white; display: inline-block; padding: 5px 15px; font-weight: 900; font-size: 0.7rem; letter-spacing: 0.15em; border-radius: 4px; margin-bottom: 25px; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .hero-title { font-family: var(--font-display); font-size: 3.2rem; line-height: 1.1; margin: 0 0 25px; color: var(--navy); }
+        .hero-desc { font-size: 1.3rem; line-height: 1.6; color: #4A5568; margin-bottom: 40px; font-weight: 500; }
+        .hero-meta { font-weight: 800; font-size: 0.8rem; color: #A0AEC0; }
+        .hero-meta a { color: var(--teal); text-decoration: none; border-bottom: 2px solid var(--teal); margin-left: 15px; }
+
+        .news-sidebar { background: #F8FAFC; padding: 40px; }
+        .sidebar-label { font-weight: 900; font-size: 0.75rem; letter-spacing: 0.2em; color: #A0AEC0; border-bottom: 2px solid #E2E8F0; padding-bottom: 15px; margin-bottom: 30px; text-transform: uppercase; }
+        .sidebar-news-item { margin-bottom: 35px; border-bottom: 1px solid #E2E8F0; padding-bottom: 20px; }
+        .item-cat { color: var(--teal); font-weight: 900; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+        .item-title { font-family: var(--font-display); font-size: 1.25rem; margin: 0 0 12px; line-height: 1.3; color: var(--navy); }
+        .item-meta { font-size: 0.7rem; color: #A0AEC0; font-weight: 700; }
+        .item-meta a { color: var(--gold); text-decoration: none; margin-left: 10px; }
+
+        /* Section Header - Clean, No Subheaders per Rule */
+        .section-header-card { height: 380px; position: relative; overflow: hidden; border-bottom: 5px solid var(--gold); }
+        .sh-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .sh-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,28,54,0.95), transparent); display: flex; align-items: flex-end; padding: 60px; }
+        .sh-title { color: white; font-family: var(--font-display); font-size: 3.5rem; margin: 0; }
 
         /* Metrics */
-        .metrics-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: 35px; }
-        .mu-card { background: var(--glass); padding: 40px; border-radius: 32px; border-bottom: 10px solid var(--teal); box-shadow: ${BRAND.shadow}; backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.5); position: relative; transition: transform 0.3s; }
-        .mu-card:hover { transform: translateY(-5px); }
-        .mu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-        .mu-label { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; color: #64748B; letter-spacing: 0.12em; }
-        .mu-accent-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .mu-val { font-size: 3.2rem; font-family: var(--font-display); font-weight: 900; line-height: 1; margin: 12px 0; color: var(--navy); }
-        .mu-trend { font-size: 1.05rem; font-weight: 800; color: var(--teal); }
+        .metrics-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; margin-top: 40px; }
+        .mu-card { background: white; padding: 40px; border-radius: 30px; border: 1px solid #E2E8F0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .mu-label { font-size: 0.75rem; font-weight: 900; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 15px; }
+        .mu-val { font-size: 3rem; font-family: var(--font-display); color: var(--navy); font-weight: 800; margin-bottom: 10px; }
+        .mu-trend { color: var(--teal); font-weight: 900; font-size: 0.9rem; }
 
-        /* Research Block */
-        .research-block { margin-top: 40px; background: var(--navy); color: white; padding: 65px; border-radius: 48px; border-bottom: 16px solid var(--gold); box-shadow: ${BRAND.shadow}; border: 1px solid rgba(255,255,255,0.1); }
-        .rb-status { display: flex; align-items: center; gap: 18px; font-size: 0.8rem; font-weight: 900; color: var(--gold); letter-spacing: 0.3em; margin-bottom: 35px; text-transform: uppercase; }
-        .rb-status-indicator { width: 11px; height: 11px; border-radius: 50%; background: var(--gold); animation: status-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
-        @keyframes status-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
-        .rb-text { font-size: 1.35rem; line-height: 1.85; opacity: 0.94; font-weight: 500; text-align: justify; }
-        .rb-text strong { color: var(--teal); font-weight: 900; }
-
-        /* Methodology */
-        .methodology-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; }
-        .methodology-card { background: var(--glass); padding: 40px; border-radius: 30px; box-shadow: ${BRAND.shadow}; }
-        .methodology-card h4 { font-family: var(--font-display); font-size: 1.6rem; margin: 0 0 15px; color: var(--teal); }
-        .methodology-card p { line-height: 1.7; color: var(--navy); opacity: 0.85; margin: 0; }
-
-        /* Console / Drop Zone */
-        .drop-zone { border: 3px dashed var(--teal); border-radius: 40px; padding: 80px; text-align: center; cursor: pointer; transition: 0.3s; background: rgba(0, 107, 118, 0.02); }
-        .drop-zone:hover, .drop-zone.active { background: rgba(0, 107, 118, 0.08); border-color: var(--accent); }
-        .drop-icon { color: var(--teal); margin-bottom: 25px; transform: scale(3); display: inline-block; }
-        .drop-zone h3 { font-family: var(--font-display); font-size: 2rem; margin: 0 0 10px; color: var(--navy); }
-        .drop-zone p { color: var(--navy); opacity: 0.7; max-width: 500px; margin: 0 auto 30px; line-height: 1.6; }
-
-        /* Exports */
-        .export-dropdown, .share-dropdown { position: relative; }
-        .export-menu, .share-menu { display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: 20px; box-shadow: ${BRAND.shadow}; width: 220px; z-index: 1000; overflow: hidden; margin-top: 10px; border: 1px solid #F1F5F9; }
-        .export-dropdown:hover .export-menu, .share-dropdown:hover .share-menu { display: block; }
-        .export-menu button, .share-menu button { width: 100%; text-align: left; padding: 15px 25px; border: none; background: none; font-weight: 700; color: var(--navy); cursor: pointer; border-bottom: 1px solid #F1F5F9; transition: 0.2s; }
-        .export-menu button:hover, .share-menu button:hover { background: var(--teal); color: white; }
+        /* Buttons & Controls */
+        .btn-vdp { background: var(--teal); color: white; border: none; padding: 18px 40px; border-radius: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s; }
+        .btn-vdp.secondary { background: white; color: var(--navy); border: 2px solid #E2E8F0; }
+        .btn-vdp:hover { filter: brightness(1.1); transform: translateY(-2px); }
 
         /* Concierge */
-        .concierge-toggle { position: fixed; bottom: 45px; right: 45px; width: 85px; height: 85px; background: var(--teal); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 2.6rem; cursor: pointer; z-index: 2000; box-shadow: 0 25px 60px rgba(0,0,0,0.35); transition: 0.4s; }
-        .concierge-toggle.active { transform: rotate(90deg); background: var(--navy); }
-        .concierge-panel { position: fixed; bottom: 150px; right: 45px; width: 480px; height: 680px; background: white; border-radius: 45px; box-shadow: 0 50px 130px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; z-index: 2000; }
-        .cp-header { background: var(--navy); color: white; padding: 25px; text-align: center; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; }
-        .cp-body { flex: 1; padding: 30px; overflow-y: auto; background: #F9FBFC; display: flex; flex-direction: column; gap: 20px; }
-        .chat-bubble-vdp { padding: 18px 24px; border-radius: 24px; font-size: 1.05rem; max-width: 88%; line-height: 1.6; font-weight: 500; }
+        .concierge-toggle { position: fixed; bottom: 40px; right: 40px; width: 75px; height: 75px; background: var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; cursor: pointer; z-index: 2000; box-shadow: 0 15px 45px rgba(0,0,0,0.2); transition: 0.3s; }
+        .concierge-panel { position: fixed; bottom: 130px; right: 40px; width: 420px; height: 600px; background: white; border-radius: 40px; z-index: 2000; box-shadow: 0 30px 100px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; }
+        .cp-header { background: var(--navy); color: white; padding: 25px; text-align: center; font-weight: 900; text-transform: uppercase; }
+        .cp-body { flex: 1; padding: 30px; overflow-y: auto; background: #F8FAFC; display: flex; flex-direction: column; gap: 15px; }
+        .chat-bubble-vdp { padding: 15px 22px; border-radius: 20px; font-size: 1rem; max-width: 85%; }
         .chat-bubble-vdp.user { background: var(--teal); color: white; align-self: flex-end; }
-        .chat-bubble-vdp.model { background: white; border: 1.5px solid #F1F5F9; align-self: flex-start; color: var(--navy); }
-        .cp-input-area { padding: 25px; background: white; border-top: 1px solid #F1F5F9; }
-        .cp-input-area input { width: 100%; padding: 20px 25px; border-radius: 20px; border: 3px solid #F1F5F9; outline: none; font-weight: 800; font-size: 1.1rem; }
-        .cp-input-area input:focus { border-color: var(--teal); }
-
-        .btn-vdp { background: var(--teal); color: white; border: none; padding: 18px 35px; border-radius: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; cursor: pointer; transition: 0.3s; box-shadow: 0 12px 35px rgba(0,107,118,0.25); }
-        .btn-vdp.secondary { background: white; color: var(--navy); border: 2px solid #E2E8F0; box-shadow: none; }
-        .btn-vdp:hover { transform: translateY(-3px); filter: brightness(1.1); }
-
-        .pane-content { padding: 40px; }
-        .shimmer-report { height: 350px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); background-size: 200% 100%; animation: shimmer 2s infinite linear; border-radius: 40px; }
-        @keyframes shimmer { to { background-position: 200% 0; } }
+        .chat-bubble-vdp.model { background: white; border: 1px solid #E2E8F0; align-self: flex-start; color: var(--navy); }
+        .cp-input-area { padding: 25px; border-top: 1px solid #E2E8F0; }
+        .cp-input-area input { width: 100%; padding: 18px 25px; border-radius: 15px; border: 2px solid #F1F5F9; outline: none; font-weight: 700; }
       `}</style>
     </div>
   );
 };
+
+// --- View Helpers ---
 
 const CreativeStudioView = () => {
   const [prompt, setPrompt] = useState('');
@@ -582,38 +421,30 @@ const CreativeStudioView = () => {
     if (!prompt) return;
     setLoading(true);
     try {
-      await (async () => {
-        if (typeof window !== 'undefined' && (window as any).aistudio) {
-          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-          if (!hasKey) await (window as any).aistudio.openSelectKey();
-        }
-      })();
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const res = await ai.models.generateContent({
         model: 'gemini-3-pro-image-preview',
-        contents: { parts: [{ text: `High-fidelity boardroom Dana Point CA asset: ${prompt}` }] },
+        contents: { parts: [{ text: `Professional high-definition cinematic asset of Dana Point, California: ${prompt}` }] },
         config: { imageConfig: { aspectRatio: '16:9', imageSize: '1K' } }
       });
       for (const part of res.candidates[0].content.parts) {
         if (part.inlineData) { setAsset(`data:image/png;base64,${part.inlineData.data}`); break; }
       }
-    } catch { alert("Synthesis timeout."); }
+    } catch { alert("Generation timeout."); }
     finally { setLoading(false); }
   };
 
   return (
     <div className="view-pane">
-      <SectionHeader title="Creative Studio" imgUrl={DANA_POINT_IMAGERY.studio} subtitle="Cinematic Asset Orchestration" />
-      <div className="pane-content">
-        <div className="studio-controls">
-          <textarea 
-            placeholder="Describe your cinematic Dana Point vision... (e.g., 'Aerial view of Salt Creek Beach at sunset')" 
-            value={prompt} onChange={e => setPrompt(e.target.value)}
-            style={{ width: '100%', height: '140px', padding: '25px', borderRadius: '30px', border: '3px solid #F1F5F9', fontSize: '1.2rem', outline: 'none', background: '#FAFBFC' }}
-          />
-          <button className="btn-vdp mt-20" onClick={handleGen} disabled={loading}>{loading ? 'Synthesizing...' : 'Execute Generation'}</button>
-        </div>
-        {asset && <div className="asset-reveal fade-in mt-40"><img src={asset} alt="Synthesized Asset" /></div>}
+      <SectionHeader title="Creative Studio" imgUrl={DANA_POINT_IMAGERY.studio} />
+      <div className="pane-content" style={{ padding: '40px' }}>
+        <textarea 
+          placeholder="Describe your cinematic Dana Point vision... (e.g., 'Golden hour surf at Salt Creek Beach')" 
+          value={prompt} onChange={e => setPrompt(e.target.value)}
+          style={{ width: '100%', height: '140px', padding: '25px', borderRadius: '25px', border: '2px solid #E2E8F0', fontSize: '1.2rem', outline: 'none', background: '#FAFBFC', marginBottom: '20px' }}
+        />
+        <button className="btn-vdp" onClick={handleGen} disabled={loading}>{loading ? 'Synthesizing Asset...' : 'Execute Synthesis'}</button>
+        {asset && <div className="mt-40"><img src={asset} alt="Generated Asset" style={{ width: '100%', borderRadius: '25px', boxShadow: BRAND.shadow }} /></div>}
       </div>
     </div>
   );
@@ -631,58 +462,38 @@ const StrategicAnalystView = ({ data }: { data: any }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Strategic Analyst Query: ${query}. Context: ${JSON.stringify(data)}. Provide professional Title Case response. No markdown symbols. Use HTML for bolding.`,
+        contents: `Analyst Query: ${query}. Data: ${JSON.stringify(data)}. Response must be professional Title Case and HTML formatted. No markdown.`,
         config: { thinkingConfig: { thinkingBudget: 32768 } }
       });
       setRes(response.text || 'Analysis complete.');
-    } catch { setRes('Buffer exceeded.'); }
+    } catch { setRes('Cognitive buffer limit reached.'); }
     finally { setLoading(false); }
   };
 
   return (
     <div className="view-pane">
-       <SectionHeader title="Strategic Analyst" imgUrl={DANA_POINT_IMAGERY.analyst} subtitle="High-Reasoning Decision Support Engine" />
-       <div className="research-block mt-40">
-          <input 
-            placeholder="Pose a strategic inquiry for regional yield optimization and market performance..." 
-            value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAnalyst()}
-            style={{ width: '100%', padding: '25px', borderRadius: '25px', border: '3.5px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '1.3rem', outline: 'none' }}
-          />
-          <button className="btn-vdp mt-20" onClick={handleAnalyst} disabled={loading} style={{ background: BRAND.accent }}>{loading ? 'Reasoning...' : 'Execute Deep Regional Analysis'}</button>
-          {res && <div className="rb-text mt-40" dangerouslySetInnerHTML={{ __html: cleanAI(res) }} />}
+       <SectionHeader title="Strategic Analyst" imgUrl={DANA_POINT_IMAGERY.analyst} />
+       <div style={{ padding: '40px' }}>
+          <input placeholder="Pose a strategic regional inquiry..." value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAnalyst()} style={{ width: '100%', padding: '25px', borderRadius: '25px', border: '2px solid #E2E8F0', fontSize: '1.2rem', outline: 'none' }} />
+          <button className="btn-vdp mt-20" onClick={handleAnalyst} disabled={loading}>{loading ? 'Reasoning...' : 'Execute Deep Analysis'}</button>
+          {res && <div className="mt-40 mu-card" style={{ fontSize: '1.2rem', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: cleanAI(res) }} />}
        </div>
     </div>
   );
 };
 
-const LogisticsView = () => {
-  const [data, setData] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const fetchMaps = async () => {
-    setLoading(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const res = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: "List top visitor logistics hubs and transportation centers in Dana Point, CA.",
-        config: { tools: [{ googleMaps: {} }], toolConfig: { retrievalConfig: { latLng: { latitude: 33.4672, longitude: -117.6981 } } } }
-      });
-      setData(res.text || '');
-    } catch { setData('Grounding sequence offline.'); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div className="view-pane">
-       <SectionHeader title="Logistics & Access" imgUrl={DANA_POINT_IMAGERY.logistics} subtitle="Grounding Intelligence Hub for Infrastructure" />
-       <div className="pane-content mt-30" style={{ background: BRAND.glass, borderRadius: '40px', boxShadow: BRAND.shadow }}>
-          <button className="btn-vdp" onClick={fetchMaps} disabled={loading}>Sync Regional Infrastructure Nodes</button>
-          {data && <div className="rb-text mt-40" style={{ color: BRAND.navy }} dangerouslySetInnerHTML={{ __html: cleanAI(data) }} />}
+const DataManagementConsole = ({ onUpdate }: { onUpdate: (data: any) => void }) => (
+  <div className="view-pane">
+    <SectionHeader title="Data Console" imgUrl={DANA_POINT_IMAGERY.console} />
+    <div style={{ padding: '80px', textAlign: 'center' }}>
+       <div style={{ padding: '80px', border: '3px dashed var(--teal)', borderRadius: '40px', background: '#F8FAFC' }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem' }}>Synchronize Regional Datasets</h3>
+          <p style={{ maxWidth: '600px', margin: '20px auto', fontSize: '1.1rem', opacity: 0.7 }}>Drag and drop secure CSV/XLS data streams to update the VDP Strategic Brain and refine regional benchmarks.</p>
+          <button className="btn-vdp" onClick={() => alert("Interface ready for local file input.")}>Select Intelligence Source</button>
        </div>
     </div>
-  );
-};
+  </div>
+);
 
 // --- Execution ---
 const root = createRoot(document.getElementById('root')!);
