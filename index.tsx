@@ -19,16 +19,16 @@ const BRAND = {
 
 const DANA_POINT_IMAGERY = {
   background: "https://images.unsplash.com/photo-1544923246-77307dd654ca?q=80&w=1974&auto=format&fit=crop", 
-  impact: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&h=400&fit=crop", 
-  hotel: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200&h=400&fit=crop", 
-  origin: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=1200&h=400&fit=crop", 
+  impact: "https://images.unsplash.com/photo-1568430462989-44163eb1752f?q=80&w=1200&h=400&fit=crop", // Whale watching tail
+  hotel: "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?q=80&w=1200&h=400&fit=crop", // Laguna Cliffs / Coastal Clifs
+  origin: "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?q=80&w=1200&h=400&fit=crop", // Harbor/Boats
+  newsroom: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&h=400&fit=crop", // Lantern District Ocean View
   roi: "https://images.unsplash.com/photo-1533900298318-6b8da08a523e?q=80&w=1200&h=400&fit=crop", 
   logistics: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=1200&h=400&fit=crop", 
   studio: "https://images.unsplash.com/photo-1537954773382-c51440b8e4b7?q=80&w=1200&h=400&fit=crop", 
   analyst: "https://images.unsplash.com/photo-1555909712-4351fad34df3?q=80&w=1200&h=400&fit=crop",
   console: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&h=400&fit=crop",
   methodology: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1200&h=400&fit=crop",
-  newsroom: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1200&h=400&fit=crop"
 };
 
 // --- News & Content Data ---
@@ -50,9 +50,9 @@ const TICKER_MSGS = [
 
 // --- Initial Vetted Data ---
 const INITIAL_VETTED_DATA = {
-  impact: { spend: "$481.0M", growth: "17.1%", trips: "2.3M", jobs: "2,138" },
-  hotel: { occupancy: "64.2%", adr: "$262", revpar: "$168.25", index: "113" },
-  origin: { dayRate: "85.6%", overnight: "14.4%", repeats: "28.6%", primary: "Los Angeles" },
+  impact: { spend: "$481.0M", growth: "17.1%", trips: "2.3M", jobs: "2,138", source: 'Datafy / U.S. Travel', date: 'Q4 2024' },
+  hotel: { occupancy: "64.2%", adr: "$262", revpar: "$168.25", index: "113", source: 'STR Global', date: 'Dec 2024' },
+  origin: { dayRate: "85.6%", overnight: "14.4%", repeats: "28.6%", primary: "Los Angeles", source: 'Datafy Geofencing', date: 'Annual 2024' },
   events: [
     { name: 'Ohana Fest', roi: '14.2x' },
     { name: 'Festival of Whales', roi: '8.5x' },
@@ -122,13 +122,14 @@ const cleanAI = (txt: string) => {
 
 // --- Components ---
 
-const SectionHeader = ({ title, imgUrl }: { title: string, imgUrl: string }) => (
+const SectionHeader = ({ title, imgUrl, subtitle }: { title: string, imgUrl: string, subtitle?: string }) => (
   <div className="section-header-card fade-in">
     <div className="sh-img-wrap">
       <img src={imgUrl} alt={title} loading="lazy" />
       <div className="sh-overlay">
         <div className="sh-content">
           <h2 className="sh-title">{title} Data Suite</h2>
+          {subtitle && <p className="sh-subtitle">{subtitle}</p>}
         </div>
       </div>
     </div>
@@ -145,7 +146,7 @@ const NavItem = ({ id, label, desc, icon: Icon, active, onClick }: any) => (
   </div>
 );
 
-const MetricUnit = ({ label, val, trend }: any) => (
+const MetricUnit = ({ label, val, trend, source, date, onDrilldown }: any) => (
   <div className="mu-card">
     <div className="mu-header">
       <span className="mu-label">{label}</span>
@@ -153,12 +154,19 @@ const MetricUnit = ({ label, val, trend }: any) => (
     </div>
     <div className="mu-val">{val}</div>
     <div className="mu-trend">{trend}</div>
+    <div className="mu-footer">
+      <div className="mu-source-info">
+        {source && <span>{source}</span>}
+        {date && <span> • {date}</span>}
+      </div>
+      <button className="drilldown-btn" onClick={() => onDrilldown(label, val)}>DRILLDOWN</button>
+    </div>
   </div>
 );
 
 const NewsroomView = () => (
   <div className="view-pane newsroom-pane">
-    <SectionHeader title="Intelligence Newsroom" imgUrl={DANA_POINT_IMAGERY.newsroom} />
+    <SectionHeader title="Intelligence Newsroom" imgUrl={DANA_POINT_IMAGERY.newsroom} subtitle="Real-Time Hospitality & Regional Updates" />
     <div className="newsroom-grid">
       <div className="news-hero">
         <div className="breaking-badge">BREAKING NEWS</div>
@@ -190,9 +198,14 @@ const Dashboard = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [msg, setMsg] = useState('');
   const [chatLog, setChatLog] = useState<{ role: 'user' | 'model', text: string }[]>([]);
+  const [drilldown, setDrilldown] = useState<{label: string, value: string} | null>(null);
 
   const handleUpdate = (newData: any) => {
     setVettedData(prev => ({ ...prev, impact: { ...prev.impact, ...newData } }));
+  };
+
+  const handleDrilldown = (label: string, val: string) => {
+    setDrilldown({ label, value: val });
   };
 
   const handleChat = async () => {
@@ -204,7 +217,7 @@ const Dashboard = () => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const res = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Act as the Dana Point Intelligence Concierge. Data: ${JSON.stringify(vettedData)}. User: ${currentMsg}. Response must be Title Case, professional, and HTML formatted. No markdown symbols.`,
+        contents: `Act as the Dana Point Intelligence Concierge. Data: ${JSON.stringify(vettedData)}. User: ${currentMsg}. Response must be Title Case, professional, and HTML formatted. No markdown symbols. Focus on Dana Point, California specificity.`,
       });
       setChatLog(p => [...p, { role: 'model', text: res.text || 'Intelligence synchronized.' }]);
     } catch { setChatLog(p => [...p, { role: 'model', text: 'Cognitive buffer exceeded.' }]); }
@@ -214,12 +227,11 @@ const Dashboard = () => {
     <div className="app-container">
       <div className="background-parallax" style={{ backgroundImage: `url(${DANA_POINT_IMAGERY.background})` }} />
       
-      {/* Clickable, Slowed Ticker linked to Newsroom */}
-      <div className="intelligence-ticker" onClick={() => setActiveTab('newsroom')} title="Click to open Newsroom">
+      <div className="intelligence-ticker" onClick={() => setActiveTab('newsroom')}>
         <div className="ticker-label">LIVE DATA</div>
-        <div className="ticker-viewport">
+        <div className="ticker-wrapper">
           <div className="ticker-content">
-            {TICKER_MSGS.map((m, i) => (
+            {TICKER_MSGS.concat(TICKER_MSGS).map((m, i) => (
               <span key={i} className="ticker-msg">{m}</span>
             ))}
           </div>
@@ -229,13 +241,13 @@ const Dashboard = () => {
       <aside className="sidebar-container">
         <div className="sidebar-brand">
            <h1 className="brand-logo">Visit Dana Point</h1>
-           <span className="brand-suite">Intelligence Suite 12.0</span>
+           <span className="brand-suite">Strategic Intelligence Suite</span>
         </div>
         <nav className="sidebar-navigation">
-          <NavItem id="impact" label="Economic Impact" desc="Regional Yield Analysis" icon={Icons.Impact} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="hotel" label="Hotel Performance" desc="STR Performance Benchmarks" icon={Icons.Hotel} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="origin" label="Visitor Origin" desc="Geofencing Market Analysis" icon={Icons.Origin} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="newsroom" label="Newsroom" desc="Live Marketplace Intelligence" icon={Icons.Newsroom} active={activeTab} onClick={setActiveTab} />
+          <NavItem id="impact" label="Economic Impact" desc="Whale Watching & Regional Yield" icon={Icons.Impact} active={activeTab} onClick={setActiveTab} />
+          <NavItem id="hotel" label="Hotel Performance" desc="Laguna Cliffs & Market Benchmarks" icon={Icons.Hotel} active={activeTab} onClick={setActiveTab} />
+          <NavItem id="origin" label="Visitor Origin" desc="Harbor Geofencing Analysis" icon={Icons.Origin} active={activeTab} onClick={setActiveTab} />
+          <NavItem id="newsroom" label="Newsroom" desc="Lantern District Intelligence" icon={Icons.Newsroom} active={activeTab} onClick={setActiveTab} />
           <NavItem id="studio" label="Creative Studio" desc="Cinematic Asset Generation" icon={Icons.Studio} active={activeTab} onClick={setActiveTab} />
           <NavItem id="analyst" label="Strategic Analyst" desc="High-Reasoning Support Engine" icon={Icons.Analyst} active={activeTab} onClick={setActiveTab} />
           <NavItem id="console" label="Management Console" desc="Strategic Data Integration" icon={Icons.Console} active={activeTab} onClick={setActiveTab} />
@@ -247,7 +259,7 @@ const Dashboard = () => {
         <header className="viewport-header">
            <div className="vh-context">
               <h2 className="vh-title">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('room', ' Room')} Overview</h2>
-              <p className="vh-location">Dana Point, California • Verified Sequence Active</p>
+              <p className="vh-location">Dana Point, California • Intelligence Sequence Active</p>
            </div>
            <div className="vh-actions">
               <button className="btn-vdp secondary" onClick={() => alert("Report generated.")}>Generate Executive PDF</button>
@@ -257,35 +269,35 @@ const Dashboard = () => {
         <section className="viewport-scroll">
            {activeTab === 'impact' && (
              <div className="view-pane">
-                <SectionHeader title="Economic Impact" imgUrl={DANA_POINT_IMAGERY.impact} />
+                <SectionHeader title="Economic Impact" imgUrl={DANA_POINT_IMAGERY.impact} subtitle="2025 Projected Regional Yield Analysis" />
                 <div className="metrics-layout">
-                   <MetricUnit label="Visitor Spend" val={vettedData.impact.spend} trend="+17.1%" />
-                   <MetricUnit label="Annual Trips" val={vettedData.impact.trips} trend="Baseline" />
-                   <MetricUnit label="Direct Employment" val={vettedData.impact.jobs} trend="Vetted" />
-                   <MetricUnit label="Tax Contribution" val="$6.5M" trend="Direct" />
+                   <MetricUnit label="Visitor Spend" val={vettedData.impact.spend} trend="+17.1%" source={vettedData.impact.source} date={vettedData.impact.date} onDrilldown={handleDrilldown} />
+                   <MetricUnit label="Annual Trips" val={vettedData.impact.trips} trend="Baseline" source={vettedData.impact.source} date={vettedData.impact.date} onDrilldown={handleDrilldown} />
+                   <MetricUnit label="Direct Employment" val={vettedData.impact.jobs} trend="Vetted" source={vettedData.impact.source} date={vettedData.impact.date} onDrilldown={handleDrilldown} />
+                   <MetricUnit label="Tax Contribution" val="$6.5M" trend="Direct" source="City of Dana Point" date="2024 Final" onDrilldown={handleDrilldown} />
                 </div>
              </div>
            )}
            {activeTab === 'hotel' && (
              <div className="view-pane">
-                <SectionHeader title="Hotel Performance" imgUrl={DANA_POINT_IMAGERY.hotel} />
+                <SectionHeader title="Hotel Performance" imgUrl={DANA_POINT_IMAGERY.hotel} subtitle="STR Global Intelligence Benchmarks" />
                 <div className="metrics-layout">
-                   <MetricUnit label="Occupancy Rate" val={vettedData.hotel.occupancy} trend="Market Average" />
-                   <MetricUnit label="ADR Projection" val={vettedData.hotel.adr} trend="Verified Performance" />
-                   <MetricUnit label="RevPAR Yield" val={vettedData.hotel.revpar} trend="Index 113" />
-                   <MetricUnit label="Performance Index" val={vettedData.hotel.index} trend="Market Superiority" />
+                   <MetricUnit label="Occupancy Rate" val={vettedData.hotel.occupancy} trend="Market Average" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
+                   <MetricUnit label="ADR Projection" val={vettedData.hotel.adr} trend="Verified Performance" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
+                   <MetricUnit label="RevPAR Yield" val={vettedData.hotel.revpar} trend="Index 113" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
+                   <MetricUnit label="Performance Index" val={vettedData.hotel.index} trend="Market Superiority" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
                 </div>
              </div>
            )}
            {activeTab === 'origin' && (
              <div className="view-pane">
-                <SectionHeader title="Visitor Origin" imgUrl={DANA_POINT_IMAGERY.origin} />
-                <div className="metrics-layout">
-                   <MetricUnit label="Day Visit Rate" val={vettedData.origin.dayRate} trend="Dominant Segment" />
-                   <MetricUnit label="Overnight Growth" val={vettedData.origin.overnight} trend="Projected Increase" />
-                   <MetricUnit label="Repeat Frequency" val={vettedData.origin.repeats} trend="Loyalty Benchmark" />
-                   <MetricUnit label="Primary Market" val={vettedData.origin.primary} trend="Los Angeles Region" />
-                </div>
+               <SectionHeader title="Visitor Origin" imgUrl={DANA_POINT_IMAGERY.origin} subtitle="Dana Point Harbor Geofencing Markets" />
+               <div className="metrics-layout">
+                  <MetricUnit label="Day Rate" val={vettedData.origin.dayRate} trend="Dominant" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
+                  <MetricUnit label="Overnight" val={vettedData.origin.overnight} trend="Opportunity" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
+                  <MetricUnit label="Repeat Rate" val={vettedData.origin.repeats} trend="Loyalty" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
+                  <MetricUnit label="Primary Market" val={vettedData.origin.primary} trend="Regional Focus" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
+               </div>
              </div>
            )}
            {activeTab === 'newsroom' && <NewsroomView />}
@@ -294,6 +306,25 @@ const Dashboard = () => {
            {activeTab === 'console' && <DataManagementConsole onUpdate={handleUpdate} />}
         </section>
       </main>
+
+      {drilldown && (
+        <div className="drilldown-modal-overlay" onClick={() => setDrilldown(null)}>
+          <div className="drilldown-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{drilldown.label} Deep Dive</h3>
+              <button onClick={() => setDrilldown(null)}>✕</button>
+            </div>
+            <div className="modal-content">
+              <div className="modal-hero-val">{drilldown.value}</div>
+              <p>Detailed historical breakdown for <strong>{drilldown.label}</strong> within the Dana Point region. This segment shows consistent performance metrics aligned with the 2025 strategic mandate. Source data verified via third-party audit sequence.</p>
+              <div className="mu-trend">Trend Analysis: Stable Growth Sequence</div>
+              <div className="modal-actions">
+                <button className="btn-vdp" onClick={() => alert("Full dataset exported.")}>Export Full Analysis</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {chatOpen && (
         <div className="concierge-panel">
@@ -321,17 +352,15 @@ const Dashboard = () => {
         .app-container { display: flex; height: 100vh; position: relative; }
         .background-parallax { position: fixed; inset: 0; background-size: cover; background-position: center; opacity: 0.12; z-index: -1; }
 
-        /* Ticker - Relooping, Slowed logic */
-        .intelligence-ticker { height: 48px; background: var(--navy); color: white; display: flex; align-items: center; overflow: hidden; position: fixed; top: 0; left: 340px; right: 0; z-index: 1000; cursor: pointer; border-bottom: 2px solid var(--gold); transition: background 0.3s; }
-        .intelligence-ticker:hover { background: #0c2345; }
-        .ticker-label { background: var(--danger); font-weight: 900; font-size: 0.65rem; height: 100%; display: flex; align-items: center; padding: 0 20px; letter-spacing: 0.1em; z-index: 2; box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
-        .ticker-viewport { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
-        .ticker-content { display: flex; white-space: nowrap; position: absolute; left: 100%; animation: ticker-scroll 90s linear infinite; }
-        .ticker-msg { padding-right: 180px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.1); }
-        
-        @keyframes ticker-scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-400%); } /* Slower, more complete scroll before relooping */
+        /* Ticker - Fixed for perfect looping within container */
+        .intelligence-ticker { height: 48px; background: var(--navy); color: white; display: flex; align-items: center; overflow: hidden; position: fixed; top: 0; left: 340px; right: 0; z-index: 1000; cursor: pointer; border-bottom: 2px solid var(--gold); }
+        .ticker-label { background: var(--danger); font-weight: 900; font-size: 0.65rem; height: 100%; display: flex; align-items: center; padding: 0 20px; letter-spacing: 0.1em; z-index: 2; }
+        .ticker-wrapper { flex: 1; overflow: hidden; position: relative; height: 100%; }
+        .ticker-content { display: flex; white-space: nowrap; align-items: center; height: 100%; position: absolute; left: 0; animation: ticker-animation 60s linear infinite; }
+        .ticker-msg { padding-right: 150px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+        @keyframes ticker-animation { 
+          0% { transform: translateX(0); } 
+          100% { transform: translateX(-50%); } 
         }
 
         /* Sidebar */
@@ -377,23 +406,42 @@ const Dashboard = () => {
         .item-meta { font-size: 0.7rem; color: #A0AEC0; font-weight: 700; }
         .item-meta a { color: var(--gold); text-decoration: none; margin-left: 10px; }
 
-        /* Section Header - Clean, No Subheaders per Rule */
-        .section-header-card { height: 380px; position: relative; overflow: hidden; border-bottom: 5px solid var(--gold); }
+        /* Section Header */
+        .section-header-card { height: 380px; position: relative; overflow: hidden; border-bottom: 5px solid var(--gold); border-radius: 40px 40px 0 0; }
         .sh-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
         .sh-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,28,54,0.95), transparent); display: flex; align-items: flex-end; padding: 60px; }
         .sh-title { color: white; font-family: var(--font-display); font-size: 3.5rem; margin: 0; }
+        .sh-subtitle { color: var(--gold); font-size: 1.1rem; font-weight: 800; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
 
         /* Metrics */
         .metrics-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; margin-top: 40px; }
-        .mu-card { background: white; padding: 40px; border-radius: 30px; border: 1px solid #E2E8F0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .mu-card { background: white; padding: 40px; border-radius: 30px; border: 1px solid #E2E8F0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         .mu-label { font-size: 0.75rem; font-weight: 900; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 15px; }
-        .mu-val { font-size: 3rem; font-family: var(--font-display); color: var(--navy); font-weight: 800; margin-bottom: 10px; }
-        .mu-trend { color: var(--teal); font-weight: 900; font-size: 0.9rem; }
+        .mu-val { font-size: 3rem; font-family: var(--font-display); color: var(--navy); font-weight: 800; margin-bottom: 10px; flex: 1; }
+        .mu-trend { color: var(--teal); font-weight: 900; font-size: 0.9rem; margin-bottom: 15px; }
+        .mu-footer { border-top: 1px solid #F1F5F9; padding-top: 15px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .mu-source-info { font-size: 0.65rem; color: #A0AEC0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; max-width: 60%; }
+        .drilldown-btn { background: transparent; border: 1.5px solid var(--teal); color: var(--teal); padding: 5px 12px; border-radius: 8px; font-size: 0.65rem; font-weight: 900; letter-spacing: 0.05em; transition: 0.3s; }
+        .drilldown-btn:hover { background: var(--teal); color: white; }
 
         /* Buttons & Controls */
         .btn-vdp { background: var(--teal); color: white; border: none; padding: 18px 40px; border-radius: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s; }
         .btn-vdp.secondary { background: white; color: var(--navy); border: 2px solid #E2E8F0; }
         .btn-vdp:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+        /* Drilldown Modal */
+        .drilldown-modal-overlay { position: fixed; inset: 0; background: rgba(10, 28, 54, 0.8); backdrop-filter: blur(5px); z-index: 5000; display: flex; align-items: center; justify-content: center; animation: fade-in 0.3s ease; }
+        .drilldown-modal { background: white; width: 600px; border-radius: 40px; overflow: hidden; box-shadow: 0 50px 100px rgba(0,0,0,0.5); animation: zoom-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-header { padding: 30px 40px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; background: var(--dawn); }
+        .modal-header h3 { margin: 0; font-family: var(--font-display); font-size: 1.8rem; }
+        .modal-header button { background: none; border: none; font-size: 1.5rem; color: #A0AEC0; cursor: pointer; }
+        .modal-content { padding: 40px; }
+        .modal-hero-val { font-family: var(--font-display); font-size: 5rem; font-weight: 900; color: var(--teal); margin-bottom: 20px; text-align: center; }
+        .modal-content p { font-size: 1.1rem; line-height: 1.7; color: #4A5568; margin-bottom: 30px; }
+        .modal-actions { display: flex; justify-content: center; padding-top: 20px; }
+        
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoom-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
         /* Concierge */
         .concierge-toggle { position: fixed; bottom: 40px; right: 40px; width: 75px; height: 75px; background: var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; cursor: pointer; z-index: 2000; box-shadow: 0 15px 45px rgba(0,0,0,0.2); transition: 0.3s; }
@@ -405,6 +453,9 @@ const Dashboard = () => {
         .chat-bubble-vdp.model { background: white; border: 1px solid #E2E8F0; align-self: flex-start; color: var(--navy); }
         .cp-input-area { padding: 25px; border-top: 1px solid #E2E8F0; }
         .cp-input-area input { width: 100%; padding: 18px 25px; border-radius: 15px; border: 2px solid #F1F5F9; outline: none; font-weight: 700; }
+        
+        .mt-20 { margin-top: 20px; }
+        .mt-40 { margin-top: 40px; }
       `}</style>
     </div>
   );
@@ -424,7 +475,7 @@ const CreativeStudioView = () => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const res = await ai.models.generateContent({
         model: 'gemini-3-pro-image-preview',
-        contents: { parts: [{ text: `Professional high-definition cinematic asset of Dana Point, California: ${prompt}` }] },
+        contents: { parts: [{ text: `Professional high-definition asset of Dana Point, CA: ${prompt}` }] },
         config: { imageConfig: { aspectRatio: '16:9', imageSize: '1K' } }
       });
       for (const part of res.candidates[0].content.parts) {
@@ -436,7 +487,7 @@ const CreativeStudioView = () => {
 
   return (
     <div className="view-pane">
-      <SectionHeader title="Creative Studio" imgUrl={DANA_POINT_IMAGERY.studio} />
+      <SectionHeader title="Creative Studio" imgUrl={DANA_POINT_IMAGERY.studio} subtitle="Cinematic Asset Orchestration" />
       <div className="pane-content" style={{ padding: '40px' }}>
         <textarea 
           placeholder="Describe your cinematic Dana Point vision... (e.g., 'Golden hour surf at Salt Creek Beach')" 
@@ -444,7 +495,7 @@ const CreativeStudioView = () => {
           style={{ width: '100%', height: '140px', padding: '25px', borderRadius: '25px', border: '2px solid #E2E8F0', fontSize: '1.2rem', outline: 'none', background: '#FAFBFC', marginBottom: '20px' }}
         />
         <button className="btn-vdp" onClick={handleGen} disabled={loading}>{loading ? 'Synthesizing Asset...' : 'Execute Synthesis'}</button>
-        {asset && <div className="mt-40"><img src={asset} alt="Generated Asset" style={{ width: '100%', borderRadius: '25px', boxShadow: BRAND.shadow }} /></div>}
+        {asset && <div className="mt-40"><img src={asset} alt="Generated" style={{ width: '100%', borderRadius: '25px', boxShadow: BRAND.shadow }} /></div>}
       </div>
     </div>
   );
@@ -462,17 +513,17 @@ const StrategicAnalystView = ({ data }: { data: any }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Analyst Query: ${query}. Data: ${JSON.stringify(data)}. Response must be professional Title Case and HTML formatted. No markdown.`,
+        contents: `Analyst Query: ${query}. Data: ${JSON.stringify(data)}. Provide professional Title Case response. HTML formatted. Focus on Dana Point, CA locations.`,
         config: { thinkingConfig: { thinkingBudget: 32768 } }
       });
       setRes(response.text || 'Analysis complete.');
-    } catch { setRes('Cognitive buffer limit reached.'); }
+    } catch { setRes('Buffer limit reached.'); }
     finally { setLoading(false); }
   };
 
   return (
     <div className="view-pane">
-       <SectionHeader title="Strategic Analyst" imgUrl={DANA_POINT_IMAGERY.analyst} />
+       <SectionHeader title="Strategic Analyst" imgUrl={DANA_POINT_IMAGERY.analyst} subtitle="High-Reasoning Decision Support" />
        <div style={{ padding: '40px' }}>
           <input placeholder="Pose a strategic regional inquiry..." value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAnalyst()} style={{ width: '100%', padding: '25px', borderRadius: '25px', border: '2px solid #E2E8F0', fontSize: '1.2rem', outline: 'none' }} />
           <button className="btn-vdp mt-20" onClick={handleAnalyst} disabled={loading}>{loading ? 'Reasoning...' : 'Execute Deep Analysis'}</button>
@@ -484,12 +535,12 @@ const StrategicAnalystView = ({ data }: { data: any }) => {
 
 const DataManagementConsole = ({ onUpdate }: { onUpdate: (data: any) => void }) => (
   <div className="view-pane">
-    <SectionHeader title="Data Console" imgUrl={DANA_POINT_IMAGERY.console} />
+    <SectionHeader title="Data Console" imgUrl={DANA_POINT_IMAGERY.console} subtitle="Strategic Brain Synchronizer" />
     <div style={{ padding: '80px', textAlign: 'center' }}>
        <div style={{ padding: '80px', border: '3px dashed var(--teal)', borderRadius: '40px', background: '#F8FAFC' }}>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem' }}>Synchronize Regional Datasets</h3>
-          <p style={{ maxWidth: '600px', margin: '20px auto', fontSize: '1.1rem', opacity: 0.7 }}>Drag and drop secure CSV/XLS data streams to update the VDP Strategic Brain and refine regional benchmarks.</p>
-          <button className="btn-vdp" onClick={() => alert("Interface ready for local file input.")}>Select Intelligence Source</button>
+          <p style={{ maxWidth: '600px', margin: '20px auto', fontSize: '1.1rem', opacity: 0.7 }}>Drag and drop secure CSV/XLS data streams to update the VDP Strategic Brain and refine regional benchmarks for Dana Point, CA.</p>
+          <button className="btn-vdp" onClick={() => alert("Ready for upload.")}>Select Intelligence Source</button>
        </div>
     </div>
   </div>

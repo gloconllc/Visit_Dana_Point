@@ -87,10 +87,10 @@
       #preloader-bg {
         position: absolute;
         inset: 0;
-        background-image: url('https://images.unsplash.com/photo-1544923246-77307dd654ca?q=80&w=1920&auto=format&fit=crop');
+        background-image: url('https://images.unsplash.com/photo-1568430462989-44163eb1752f?q=80&w=1920&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
-        filter: brightness(0.25) contrast(1.1);
+        filter: brightness(0.35) contrast(1.1);
         z-index: -2;
         transform: scale(1.15);
         animation: zoomOut 15s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
@@ -221,7 +221,7 @@
           <path d="M0 200V150C50 140 100 160 150 155C200 150 250 120 300 110C350 100 400 130 450 125C500 120 550 80 600 75C650 70 700 100 750 105C800 110 850 60 900 55C950 50 1000 80 1000 80V200H0Z" />
         </svg>
         <div class="preloader-title">Visit Dana Point</div>
-        <div class="preloader-subtitle">Intelligence Suite 12.0</div>
+        <div class="preloader-subtitle">Strategic Intelligence Suite</div>
         <div class="preloader-status" id="status-text"></div>
       </div>
     </div>
@@ -229,7 +229,7 @@
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
     <script>
-      const statusText = "Synchronizing Global Stewardship Streams...";
+      const statusText = "Synchronizing Dana Point Stewardship Streams...";
       const container = document.getElementById('status-text');
       statusText.split('').forEach((char, i) => {
         const span = document.createElement('span');
@@ -277,12 +277,12 @@
       });
 
       document.addEventListener('mouseover', (e) => {
-        if (e.target.closest('button, a, .sb-item, .p-bubble, .ticker-bar, .mu-card, .btn-vdp, .ni-icon-wrap, input, textarea')) {
+        if (e.target.closest('button, a, .sb-item, .p-bubble, .ticker-bar, .mu-card, .btn-vdp, .ni-icon-wrap, input, textarea, .drilldown-btn')) {
           document.body.classList.add('cursor-hover');
         }
       });
       document.addEventListener('mouseout', (e) => {
-        if (e.target.closest('button, a, .sb-item, .p-bubble, .ticker-bar, .mu-card, .btn-vdp, .ni-icon-wrap, input, textarea')) {
+        if (e.target.closest('button, a, .sb-item, .p-bubble, .ticker-bar, .mu-card, .btn-vdp, .ni-icon-wrap, input, textarea, .drilldown-btn')) {
           document.body.classList.remove('cursor-hover');
         }
       });
