@@ -1,551 +1,853 @@
 
 "use strict";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
-// --- Authoritative Branding & Standards ---
+// --- PROFESSIONAL DESIGN TOKENS ---
 const BRAND = {
-  primary: '#006B76',      // Dana Point Teal
-  accent: '#B8860B',       // Gold Accent
-  navy: '#0A1C36',         // Boardroom Navy
-  danger: '#D0021B',       // Breaking News Red
-  dawn: '#F8FAFC',
-  glass: 'rgba(255, 255, 255, 0.96)',
-  radius: '32px',
-  shadow: '0 30px 60px -12px rgba(10, 28, 54, 0.25)',
+  primary: '#005860',      // Deep Dana Point Teal
+  accent: '#A67C00',       // Rich Coastal Gold
+  brightGold: '#FFD700',   // Vivid Strategic Gold
+  navy: '#061226',         // Intense Pacific Navy
+  sand: '#F4F7F9',         // Premium Canvas Grey
+  danger: '#FF4D4D',       // Market Deficit Red
+  success: '#2DCE89',      // Growth Node Green
+  shadow: '0 30px 100px -20px rgba(6, 18, 38, 0.3)',
+  glass: 'rgba(255, 255, 255, 0.98)',
 };
 
-const DANA_POINT_IMAGERY = {
-  background: "https://images.unsplash.com/photo-1544923246-77307dd654ca?q=80&w=1974&auto=format&fit=crop", 
-  impact: "https://images.unsplash.com/photo-1568430462989-44163eb1752f?q=80&w=1200&h=400&fit=crop", // Whale watching tail
-  hotel: "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?q=80&w=1200&h=400&fit=crop", // Laguna Cliffs / Coastal Clifs
-  origin: "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?q=80&w=1200&h=400&fit=crop", // Harbor/Boats
-  newsroom: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&h=400&fit=crop", // Lantern District Ocean View
-  roi: "https://images.unsplash.com/photo-1533900298318-6b8da08a523e?q=80&w=1200&h=400&fit=crop", 
-  logistics: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=1200&h=400&fit=crop", 
-  studio: "https://images.unsplash.com/photo-1537954773382-c51440b8e4b7?q=80&w=1200&h=400&fit=crop", 
-  analyst: "https://images.unsplash.com/photo-1555909712-4351fad34df3?q=80&w=1200&h=400&fit=crop",
-  console: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&h=400&fit=crop",
-  methodology: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1200&h=400&fit=crop",
+const LANDMARKS = {
+  economic: "https://images.unsplash.com/photo-1568430462989-44163eb1752f?q=80&w=1920&auto=format&fit=crop", 
+  market: "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?q=80&w=1920&auto=format&fit=crop", 
+  advisor: "https://images.unsplash.com/photo-1555909712-4351fad34df3?q=80&w=1920&auto=format&fit=crop", 
+  resident: "https://images.unsplash.com/photo-1445013111723-99ff2c5df85d?q=80&w=1920&auto=format&fit=crop",
+  mobility: "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?q=80&w=1920&auto=format&fit=crop",
+  brand: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?q=80&w=1920&auto=format&fit=crop",
+  registry: "https://images.unsplash.com/photo-1453928582365-b6ad33cbcf64?q=80&w=1920&auto=format&fit=crop",
+  simulation: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1920&auto=format&fit=crop"
 };
 
-// --- News & Content Data ---
-const NEWS_ITEMS = [
-  { id: 1, category: 'Breaking', title: 'Dana Point Harbor Revitalization Enters Phase II', desc: 'Commercial core redevelopment strategy shifts to retail and public access enhancements.', time: '12M AGO', link: 'https://danapointharbor.com' },
-  { id: 2, category: 'Hospitality', title: 'Dana Point Resorts Report Record Q4 Occupancy', desc: 'Year-over-year ADR growth exceeds Orange County coastal benchmarks by 12%.', time: '2H AGO', link: 'https://visitdanapoint.com' },
-  { id: 3, category: 'Environment', title: 'Whale Migration Reaches Seasonal Peak Early', desc: 'World Cetacean Alliance monitors record-breaking grey whale counts off Salt Creek.', time: '4H AGO', link: 'https://festivalofwhales.com' },
-  { id: 4, category: 'Governance', title: 'City Council Approves New Tourism Business Improvement District', desc: 'Renewed funding structure to support regional destination marketing for 2026.', time: '6H AGO', link: 'https://danapoint.org' },
-  { id: 5, category: 'Surfing', title: 'Surfing Heritage & Culture Center Announces New Exhibit', desc: 'Celebrating the historical impact of Dana Point’s legendary Killer Dana break.', time: '1D AGO', link: 'https://shcc.org' },
-];
-
-const TICKER_MSGS = [
-  "BREAKING: Dana Point Harbor Phase II Redevelopment Greenlit",
-  "DATA: RevPAR Index Reaches 113 for Q4 Cycle",
-  "VDP ALERT: $481M Annual Visitor Spend Verified",
-  "ECONOMY: +17.1% Growth in Regional Yield",
-  "NATURE: Gray Whale Migration Hits Record Counts"
-];
-
-// --- Initial Vetted Data ---
-const INITIAL_VETTED_DATA = {
-  impact: { spend: "$481.0M", growth: "17.1%", trips: "2.3M", jobs: "2,138", source: 'Datafy / U.S. Travel', date: 'Q4 2024' },
-  hotel: { occupancy: "64.2%", adr: "$262", revpar: "$168.25", index: "113", source: 'STR Global', date: 'Dec 2024' },
-  origin: { dayRate: "85.6%", overnight: "14.4%", repeats: "28.6%", primary: "Los Angeles", source: 'Datafy Geofencing', date: 'Annual 2024' },
-  events: [
-    { name: 'Ohana Fest', roi: '14.2x' },
-    { name: 'Festival of Whales', roi: '8.5x' },
-    { name: 'Wellness Week', roi: '5.2x' }
-  ]
+const SECTION_FILTER_CONFIG: Record<string, { label: string, options: string[] }> = {
+  economic: { label: 'ECONOMIC PRIORITY', options: ['Yield Focus', 'Volume Focus', 'ADR Tiering'] },
+  resident: { label: 'RESIDENT BENEFIT', options: ['Tax Relief', 'Fiscal Offset', 'Community ROI'] },
+  market: { label: 'MARKET POSITION', options: ['RevPAR Dominance', 'Share Parity', 'Peer Benchmarks'] },
+  advisor: { label: 'ADVISORY NODE', options: ['Market SWOT', 'Strategic Forecast', 'Risk Sentiment'] },
+  mobility: { label: 'VISITOR FLOW', options: ['Trip Volume', 'Origin Penetration', 'Loyalty Tracking'] },
+  brand: { label: 'DIGITAL VELOCITY', options: ['Conversion Funnel', 'Sentiment Score', 'Traffic Yield'] },
+  simulation: { label: 'SIMULATION TYPE', options: ['Event Impact', 'Seasonal Surge', 'Policy Shift'] },
+  registry: { label: 'AUDIT SCOPE', options: ['Full Metadata', 'Verified Nodes Only', 'Historical Sync'] }
 };
 
-// --- Multi-Tonal Professional Icons ---
-const Icons = {
-  Impact: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M3 17l6-6 4 4 8-8" stroke="#00A3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M13 5h8v8" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="21" cy="5" r="2" fill="var(--gold)"/>
-    </svg>
-  ),
-  Hotel: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14" stroke="#00A3AF" strokeLinecap="round"/>
-      <rect x="9" y="9" width="2" height="2" rx="0.5" fill="var(--gold)"/>
-      <rect x="13" y="9" width="2" height="2" rx="0.5" fill="var(--gold)"/>
-    </svg>
-  ),
-  Origin: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <circle cx="12" cy="12" r="9" stroke="#00A3AF"/>
-      <circle cx="12" cy="12" r="3" fill="var(--gold)"/>
-    </svg>
-  ),
-  Newsroom: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z" stroke="#00A3AF"/>
-      <path d="M14 2v6h6" stroke="var(--gold)"/>
-      <path d="M7 8h5m-5 4h10m-10 4h10" stroke="#00A3AF"/>
-    </svg>
-  ),
-  Studio: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M12 19l7-7 3 3-7 7-3-3z" fill="var(--gold)" fillOpacity="0.4"/>
-      <path d="M13 2L3 12l9 9 10-10L13 2z" stroke="#00A3AF"/>
-    </svg>
-  ),
-  Analyst: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M12 2l-8 7 8 7 8-7z" fill="var(--gold)" fillOpacity="0.2" stroke="#00A3AF"/>
-      <path d="M12 16v6" stroke="var(--gold)"/>
-    </svg>
-  ),
-  Console: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M4 17l6-6 4 4 6-6" stroke="#00A3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M4 7h16" stroke="var(--gold)" strokeWidth="2"/>
-    </svg>
-  ),
+const DEFAULT_FILTERS = {
+  time: 'Annual 2024',
+  segment: 'Total Submarket',
+  metric: 'Yield Focus'
 };
 
-// --- Utilities ---
-const cleanAI = (txt: string) => {
-  if (!txt) return '';
-  return txt
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^\s*-\s+/gm, '• ')
-    .replace(/\n/g, '<br/>')
-    .replace(/\*/g, '')
-    .trim();
+// --- INTELLIGENCE CONFIG ---
+const HEALTH_CHECKS: Record<string, { sources: string[], missing: string[] }> = {
+  economic: { sources: ['STR Global', 'Datafy Spend Node'], missing: ['Q4 Parking Ancillary Revenue'] },
+  resident: { sources: ['DP City Finance', 'Resident Audit Node 2.1'], missing: ['Neighborhood specific noise impact data'] },
+  market: { sources: ['STR Comp Set', 'GA4 Benchmark API'], missing: ['Vacation Rental Unofficial Share'] },
+  mobility: { sources: ['Datafy Origin Node', 'Mobile Signal Aggregator'], missing: ['EV Charger Usage Data'] },
+  brand: { sources: ['GA4 Traffic Node', 'AdWords Performance'], missing: ['Social Sentiment Correlation Index'] },
+  simulation: { sources: ['Historical Event Logs', 'STR Delta Analysis'], missing: ['Traffic Congestion Multiplier'] }
 };
 
-// --- Components ---
+interface Preset {
+  id: string;
+  name: string;
+  time: string;
+  segment: string;
+  metric: string;
+}
 
-const SectionHeader = ({ title, imgUrl, subtitle }: { title: string, imgUrl: string, subtitle?: string }) => (
-  <div className="section-header-card fade-in">
-    <div className="sh-img-wrap">
-      <img src={imgUrl} alt={title} loading="lazy" />
-      <div className="sh-overlay">
-        <div className="sh-content">
-          <h2 className="sh-title">{title} Data Suite</h2>
-          {subtitle && <p className="sh-subtitle">{subtitle}</p>}
-        </div>
-      </div>
-    </div>
-  </div>
-);
+const GET_VETTED_INTELLIGENCE = (filters: any) => {
+  const isForecast = filters.time.includes('Forecast');
+  const isLuxury = filters.segment === 'Luxury Tier';
+  const mult = isLuxury ? 1.42 : 1.0;
+  const growth = isForecast ? 1.18 : 1.0;
+  const priorityModifier = filters.metric.includes('Focus') || filters.metric.includes('Relief') ? 1.05 : 0.95;
+  const prevMult = 0.92;
 
-const NavItem = ({ id, label, desc, icon: Icon, active, onClick }: any) => (
-  <div className={`sb-item ${active === id ? 'active' : ''}`} onClick={() => onClick(id)}>
-    <div className="ni-icon-wrap"><Icon /></div>
-    <div className="ni-text">
-       <span className="ni-label">{label}</span>
-       <span className="ni-desc">{desc}</span>
-    </div>
-  </div>
-);
-
-const MetricUnit = ({ label, val, trend, source, date, onDrilldown }: any) => (
-  <div className="mu-card">
-    <div className="mu-header">
-      <span className="mu-label">{label}</span>
-      <div className="mu-accent-dot" />
-    </div>
-    <div className="mu-val">{val}</div>
-    <div className="mu-trend">{trend}</div>
-    <div className="mu-footer">
-      <div className="mu-source-info">
-        {source && <span>{source}</span>}
-        {date && <span> • {date}</span>}
-      </div>
-      <button className="drilldown-btn" onClick={() => onDrilldown(label, val)}>DRILLDOWN</button>
-    </div>
-  </div>
-);
-
-const NewsroomView = () => (
-  <div className="view-pane newsroom-pane">
-    <SectionHeader title="Intelligence Newsroom" imgUrl={DANA_POINT_IMAGERY.newsroom} subtitle="Real-Time Hospitality & Regional Updates" />
-    <div className="newsroom-grid">
-      <div className="news-hero">
-        <div className="breaking-badge">BREAKING NEWS</div>
-        <h3 className="hero-title">{NEWS_ITEMS[0].title}</h3>
-        <p className="hero-desc">{NEWS_ITEMS[0].desc}</p>
-        <div className="hero-meta">
-          <span>{NEWS_ITEMS[0].time}</span> • <a href={NEWS_ITEMS[0].link} target="_blank" rel="noopener noreferrer">FULL REPORT</a>
-        </div>
-      </div>
-      <div className="news-sidebar">
-        <h4 className="sidebar-label">MARKET UPDATES</h4>
-        {NEWS_ITEMS.slice(1).map((item) => (
-          <div key={item.id} className="sidebar-news-item">
-            <div className="item-cat">{item.category}</div>
-            <h5 className="item-title">{item.title}</h5>
-            <div className="item-meta">
-              <span>{item.time}</span> • <a href={item.link} target="_blank" rel="noopener noreferrer">LINK</a>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('impact');
-  const [vettedData, setVettedData] = useState(INITIAL_VETTED_DATA);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [chatLog, setChatLog] = useState<{ role: 'user' | 'model', text: string }[]>([]);
-  const [drilldown, setDrilldown] = useState<{label: string, value: string} | null>(null);
-
-  const handleUpdate = (newData: any) => {
-    setVettedData(prev => ({ ...prev, impact: { ...prev.impact, ...newData } }));
+  return {
+    economic: {
+      adr: { value: `$${(262 * mult * growth * priorityModifier).toFixed(2)}`, prev: `$${(262 * mult * prevMult).toFixed(2)}`, trend: isForecast ? "+14.8%" : "STABLE", source: "STR Verified", date: filters.time },
+      yield: { value: `$${(481 * mult * growth * priorityModifier).toFixed(1)}M`, prev: `$${(481 * mult * prevMult).toFixed(1)}M`, trend: "+17.1%", source: "Datafy Intelligence", date: filters.time },
+      revpar: { value: (113 * (isLuxury ? 1.1 : 1)).toFixed(1), prev: (113 * 0.92).toFixed(1), trend: "PREMIUM", source: "STR Submarket", date: filters.time },
+      originData: [
+        { label: 'Los Angeles', value: 32.7, color: BRAND.primary },
+        { label: 'San Diego', value: 18.4, color: BRAND.accent },
+        { label: 'Riverside', value: 12.1, color: BRAND.navy },
+        { label: 'Phoenix', value: 8.5, color: BRAND.brightGold },
+        { label: 'Other', value: 28.3, color: '#CBD5E1' }
+      ]
+    },
+    resident: {
+      savings: { value: `$${(1240 * growth * priorityModifier).toFixed(0)}`, prev: "$1,120", trend: "VERIFIED", source: "DP City Finance", date: "FY 2024" },
+      totShare: { value: `$${(32.4 * growth).toFixed(1)}M`, prev: "$29.1M", trend: "+7.6%", source: "City Audit Node", date: "Annual 2024" },
+      qolRatio: { visitor: 68.2, resident: 31.8, offset: 1240 }
+    },
+    market: {
+      benchmarks: [
+        { market: 'Dana Point', index: isLuxury ? 124 : 113, prev: 105, traffic: 207600, conversion: 1.0, color: BRAND.primary },
+        { market: 'Laguna Beach', index: isLuxury ? 119 : 108, prev: 102, traffic: 185200, conversion: 1.2, color: BRAND.accent },
+        { market: 'Newport Beach', index: isLuxury ? 112 : 105, prev: 100, traffic: 312400, conversion: 0.8, color: BRAND.navy }
+      ],
+      source: "STR & Datafy Competitive Aggregator",
+      date: filters.time
+    },
+    mobility: {
+      trips: { value: (2.3 * growth * priorityModifier).toFixed(1) + "M", prev: "2.1M", trend: "+5.8%", source: "Datafy Intelligence", date: filters.time },
+      laMarketShare: { value: "32.7%", trips: "750K", source: "Datafy Origin Node", date: filters.time }
+    },
+    brand: {
+      visitors: { value: (207600 * growth).toFixed(0), prev: "191,500", trend: "+8.4%", source: "GA4 Traffic Node", date: filters.time },
+      conversion: { value: (1.0 * (isForecast ? 1.5 : 1)).toFixed(1) + "%", prev: "0.9%", benchmark: "5.0%", source: "GA4 Web Node", date: filters.time }
+    }
   };
+};
 
-  const handleDrilldown = (label: string, val: string) => {
-    setDrilldown({ label, value: val });
-  };
+// --- CANVAS & SVG COMPONENTS ---
 
-  const handleChat = async () => {
-    if (!msg.trim()) return;
-    const currentMsg = msg;
-    setChatLog(p => [...p, { role: 'user', text: currentMsg }]);
-    setMsg('');
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const res = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: `Act as the Dana Point Intelligence Concierge. Data: ${JSON.stringify(vettedData)}. User: ${currentMsg}. Response must be Title Case, professional, and HTML formatted. No markdown symbols. Focus on Dana Point, California specificity.`,
+const TrendLine = ({ color = BRAND.primary }: { color?: string }) => (
+  <div className="mini-trend">
+    <svg width="80" height="24" viewBox="0 0 80 24" fill="none" preserveAspectRatio="none">
+      <path 
+        d="M2 20C10 16 15 22 25 15C35 8 45 18 55 10C65 2 75 10 78 5" 
+        stroke={color} 
+        strokeWidth="2.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+    </svg>
+  </div>
+);
+
+const OriginFlowChart = ({ data, source, date }: { data: any[], source: string, date: string }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let offset = 0;
+
+    const render = () => {
+      const w = canvas.width = canvas.offsetWidth * 2;
+      const h = canvas.height = canvas.offsetHeight * 2;
+      ctx.scale(2, 2);
+      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+      let currentX = 0;
+      const total = data.reduce((acc, d) => acc + d.value, 0);
+      const chartWidth = canvas.offsetWidth;
+      const chartHeight = canvas.offsetHeight;
+
+      data.forEach((segment) => {
+        const segmentWidth = (segment.value / total) * chartWidth;
+        
+        ctx.fillStyle = segment.color;
+        ctx.beginPath();
+        ctx.moveTo(currentX, 0);
+
+        for (let x = currentX; x <= currentX + segmentWidth; x++) {
+          const y = 10 * Math.sin((x / 40) + offset);
+          ctx.lineTo(x, 20 + y);
+        }
+
+        ctx.lineTo(currentX + segmentWidth, chartHeight);
+        ctx.lineTo(currentX, chartHeight);
+        ctx.closePath();
+        ctx.fill();
+
+        if (segmentWidth > 50) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.font = 'bold 12px Inter';
+          ctx.fillText(`${segment.label}`, currentX + 10, chartHeight - 40);
+          ctx.fillText(`${segment.value}%`, currentX + 10, chartHeight - 20);
+        }
+
+        currentX += segmentWidth;
       });
-      setChatLog(p => [...p, { role: 'model', text: res.text || 'Intelligence synchronized.' }]);
-    } catch { setChatLog(p => [...p, { role: 'model', text: 'Cognitive buffer exceeded.' }]); }
-  };
+
+      offset += 0.05;
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [data]);
 
   return (
-    <div className="app-container">
-      <div className="background-parallax" style={{ backgroundImage: `url(${DANA_POINT_IMAGERY.background})` }} />
-      
-      <div className="intelligence-ticker" onClick={() => setActiveTab('newsroom')}>
-        <div className="ticker-label">LIVE DATA</div>
-        <div className="ticker-wrapper">
-          <div className="ticker-content">
-            {TICKER_MSGS.concat(TICKER_MSGS).map((m, i) => (
-              <span key={i} className="ticker-msg">{m}</span>
-            ))}
+    <div className="origin-flow-container glass fade-in">
+      <div className="chart-header"><span className="chart-title">VISITOR ORIGIN FLOW</span><div className="vetted-badge-mini">VETTED</div></div>
+      <canvas ref={canvasRef} className="origin-canvas" />
+      <div className="chart-footer"><SourceTag source={source} date={date} /></div>
+    </div>
+  );
+};
+
+const ADRSparkline = ({ value, label, source, date }: { value: string, label: string, source: string, date: string }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const points = [40, 35, 50, 45, 65, 55, 75];
+    const w = canvas.width = 300 * 2;
+    const h = canvas.height = 80 * 2;
+    ctx.scale(2, 2);
+    
+    ctx.clearRect(0, 0, 300, 80);
+    ctx.strokeStyle = BRAND.primary;
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const x = (i / (points.length - 1)) * 300;
+      const y = 80 - p;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle = BRAND.navy;
+    ctx.font = 'bold 10px Inter';
+    points.forEach((p, i) => {
+        const x = (i / (points.length - 1)) * 300;
+        const y = 80 - p - 10;
+        if (i === points.length - 1) ctx.fillText(`$${(parseFloat(value.replace('$', ''))).toFixed(0)}`, x - 35, y);
+    });
+
+  }, [value]);
+
+  return (
+    <div className="spark-node glass fade-in">
+      <div className="spark-meta">
+        <span className="kpi-lbl">{label}</span>
+        <span className="kpi-val-hero">{value}</span>
+      </div>
+      <canvas ref={canvasRef} className="spark-canvas" style={{ width: '100%', height: '80px' }} />
+      <SourceTag source={source} date={date} />
+    </div>
+  );
+};
+
+// --- ATOMIC UI COMPONENTS ---
+
+const DataHealthCheck = ({ moduleId }: { moduleId: string }) => {
+  const check = HEALTH_CHECKS[moduleId] || { sources: ['General Audit'], missing: ['N/A'] };
+  return (
+    <div className="health-check glass fade-in">
+      <div className="health-head"><span className="health-title">DATA HEALTH AUDIT</span><span className="health-status">NODE ACTIVE</span></div>
+      <div className="health-content">
+        <div className="health-node"><label>VETTED SOURCES</label><div className="health-tags">{check.sources.map(s => <span key={s} className="health-tag source">{s}</span>)}</div></div>
+        <div className="health-node"><label>GAP DETECTION</label><div className="health-tags">{check.missing.map(m => <span key={m} className="health-tag missing">{m}</span>)}</div></div>
+      </div>
+    </div>
+  );
+};
+
+const SourceTag = ({ source, date }: { source: string, date: string }) => (
+  <div className="kpi-source"><span className="source-lbl">SOURCE:</span><span className="source-val">{source} | {date}</span></div>
+);
+
+const KPICard = ({ label, value, prevValue, trend, showCompare, source, showTrend = false }: any) => {
+  const delta = useMemo(() => {
+    if (!showCompare || !prevValue) return null;
+    const v = parseFloat(value.replace(/[$,M%]/g, ''));
+    const p = parseFloat(prevValue.replace(/[$,M%]/g, ''));
+    return ((v - p) / p * 100).toFixed(1);
+  }, [value, prevValue, showCompare]);
+
+  return (
+    <div className="kpi-node glass fade-in">
+      <div className="kpi-head">
+        <span className="kpi-lbl">{label}</span>
+        {trend && <span className="kpi-trend-pill">{trend}</span>}
+      </div>
+      <div className="kpi-hero-wrap">
+        <div className="kpi-val-hero">{value}</div>
+        {showTrend && <TrendLine color={BRAND.primary} />}
+      </div>
+      {showCompare && prevValue && (
+        <div className="kpi-compare-cluster">
+          <div className="kpi-val-prev">PREV: <span className="prev-data">{prevValue}</span></div>
+          <div className={`kpi-delta ${parseFloat(delta || '0') >= 0 ? 'pos' : 'neg'}`}>
+            {parseFloat(delta || '0') >= 0 ? '▲' : '▼'} {Math.abs(parseFloat(delta || '0'))}%
           </div>
         </div>
-      </div>
+      )}
+      {source && <SourceTag {...source} />}
+    </div>
+  );
+};
 
-      <aside className="sidebar-container">
-        <div className="sidebar-brand">
-           <h1 className="brand-logo">Visit Dana Point</h1>
-           <span className="brand-suite">Strategic Intelligence Suite</span>
-        </div>
-        <nav className="sidebar-navigation">
-          <NavItem id="impact" label="Economic Impact" desc="Whale Watching & Regional Yield" icon={Icons.Impact} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="hotel" label="Hotel Performance" desc="Laguna Cliffs & Market Benchmarks" icon={Icons.Hotel} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="origin" label="Visitor Origin" desc="Harbor Geofencing Analysis" icon={Icons.Origin} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="newsroom" label="Newsroom" desc="Lantern District Intelligence" icon={Icons.Newsroom} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="studio" label="Creative Studio" desc="Cinematic Asset Generation" icon={Icons.Studio} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="analyst" label="Strategic Analyst" desc="High-Reasoning Support Engine" icon={Icons.Analyst} active={activeTab} onClick={setActiveTab} />
-          <NavItem id="console" label="Management Console" desc="Strategic Data Integration" icon={Icons.Console} active={activeTab} onClick={setActiveTab} />
+// --- MAIN DASHBOARD APP ---
+
+const Dashboard = () => {
+  const [tab, setTab] = useState('economic');
+  const [sidebar, setSidebar] = useState(false);
+  const [infographic, setInfographic] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [advisorBrief, setAdvisorBrief] = useState<string>('');
+  const [loadingAdvisor, setLoadingAdvisor] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [searchRegistry, setSearchRegistry] = useState('');
+  const [registryTypeFilter, setRegistryTypeFilter] = useState('ALL');
+  const [simParams, setSimParams] = useState({ month: 'October', duration: 3, attendance: 25000 });
+  const [presets, setPresets] = useState<Preset[]>(() => {
+    const saved = localStorage.getItem('vdp_presets');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, metric: SECTION_FILTER_CONFIG[tab]?.options[0] || 'Yield Focus' }));
+  }, [tab]);
+
+  const intelligence = useMemo(() => GET_VETTED_INTELLIGENCE(filters), [filters]);
+
+  const simResults = useMemo(() => {
+    const baseOcc = 0.642;
+    const attendeeStayRate = 0.18; 
+    const roomNights = (simParams.attendance * attendeeStayRate * simParams.duration);
+    const totalRooms = 3200 * simParams.duration;
+    const occLift = (roomNights / totalRooms) * 100;
+    const diningRevenue = simParams.attendance * 45 * simParams.duration; 
+
+    return {
+      occLift: occLift.toFixed(1),
+      finalOcc: (baseOcc * 100 + occLift).toFixed(1),
+      diningImpact: (diningRevenue / 1000000).toFixed(2)
+    };
+  }, [simParams]);
+
+  const registryData = useMemo(() => {
+    const base = [
+      { node: 'ANNUAL YIELD', value: intelligence.economic.yield.value, source: 'Datafy Intelligence', type: 'ECONOMIC' },
+      { node: 'ADR ANCHOR', value: intelligence.economic.adr.value, source: 'STR Verified', type: 'ECONOMIC' },
+      { node: 'REVPAR INDEX', value: intelligence.economic.revpar.value, source: 'STR Submarket', type: 'MARKET' },
+      { node: 'VISITOR TRIPS', value: intelligence.mobility.trips.value, source: 'Datafy Intelligence', type: 'MOBILITY' },
+      { node: 'TAX RELIEF', value: intelligence.resident.savings.value, source: 'DP City Finance', type: 'RESIDENT' },
+      { node: 'WEB VISITORS', value: intelligence.brand.visitors.value, source: 'GA4 Traffic Node', type: 'BRAND' },
+      { node: 'WEB CONVERSION', value: intelligence.brand.conversion.value, source: 'GA4 Web Node', type: 'BRAND' },
+    ];
+    return base.filter(d => 
+      (registryTypeFilter === 'ALL' || d.type === registryTypeFilter) &&
+      (d.node.toLowerCase().includes(searchRegistry.toLowerCase()) || d.source.toLowerCase().includes(searchRegistry.toLowerCase()))
+    );
+  }, [intelligence, searchRegistry, registryTypeFilter]);
+
+  const resetFilters = () => {
+    setFilters({ ...DEFAULT_FILTERS });
+    setCompareMode(false);
+  };
+
+  const applyPreset = (p: Preset) => {
+    setFilters({ time: p.time, segment: p.segment, metric: p.metric });
+  };
+
+  const deletePreset = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = presets.filter(p => p.id !== id);
+    setPresets(updated);
+    localStorage.setItem('vdp_presets', JSON.stringify(updated));
+  };
+
+  const savePreset = () => {
+    const name = prompt("Enter a name for this intelligence preset:");
+    if (!name) return;
+    const newPreset: Preset = { id: Date.now().toString(), name, ...filters };
+    const updated = [...presets, newPreset];
+    setPresets(updated);
+    localStorage.setItem('vdp_presets', JSON.stringify(updated));
+  };
+
+  const getAdvisorBriefing = async () => {
+    if (tab !== 'advisor') return;
+    setLoadingAdvisor(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      const compBench = intelligence.market.benchmarks.map(b => `${b.market}: Index ${b.index}`).join(', ');
+      const prompt = `Provide a boardroom briefing for Visit Dana Point. 
+      Focus: ${filters.metric}. 
+      RevPAR Index: ${intelligence.economic.revpar.value}. 
+      Competitive Benchmarks: ${compBench}.
+      Digital Velocity (Dana Point): ${intelligence.brand.visitors.value} visitors, ${intelligence.brand.conversion.value} conversion.
+      Professional and data-centric. Use markdown for structure.`;
+      const response = await ai.models.generateContent({ model: 'gemini-3-pro-preview', contents: prompt });
+      setAdvisorBrief(response.text || "Strategic synthesis unavailable.");
+    } catch (err) { console.error(err); } finally { setLoadingAdvisor(false); }
+  };
+
+  useEffect(() => { getAdvisorBriefing(); }, [tab, filters]);
+
+  const generateInfographic = async () => {
+    setGenerating(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      
+      let visualHint = "Include a clean summary table and coastal imagery.";
+      if (tab === 'market') visualHint = "Include a prominent comparative bar chart showing Market Share vs regional peers.";
+      if (tab === 'economic') visualHint = "Include an elegant line graph showing revenue yield trajectory.";
+      if (tab === 'mobility') visualHint = "Include a sophisticated flow diagram or heat map of visitor origins.";
+      if (tab === 'resident') visualHint = "Include a circular diagram showing the tax-offset ratio breakdown.";
+
+      const prompt = `Synthesize a professional executive dashboard infographic for Visit Dana Point: ${tab.toUpperCase()}. 
+      Vetted Context: ${JSON.stringify(intelligence[tab as keyof typeof intelligence])}. 
+      Design: Coastal luxury aesthetic, deep teals and soft golds.
+      Visual Requirement: ${visualHint}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: [{ text: prompt }] },
+        config: { imageConfig: { aspectRatio: "16:9" } }
+      });
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) { setInfographic(`data:image/png;base64,${part.inlineData.data}`); break; }
+      }
+    } catch (err) { console.error(err); } finally { setGenerating(false); }
+  };
+
+  const menu = [
+    { id: 'economic', label: 'Economic Performance' },
+    { id: 'resident', label: 'Resident Benefit' },
+    { id: 'market', label: 'Competitive Share' },
+    { id: 'simulation', label: 'Impact Simulation' },
+    { id: 'advisor', label: 'Strategic Advisor' },
+    { id: 'mobility', label: 'Mobility Intel' },
+    { id: 'brand', label: 'Brand Velocity' },
+    { id: 'registry', label: 'Data Registry' }
+  ];
+
+  return (
+    <div className={`app-shell ${sidebar ? 'sb-open' : ''}`}>
+      <aside className="sidebar">
+        <div className="sb-header"><h1 className="brand-logo">Visit Dana Point</h1><span className="brand-intel">INTELLIGENCE SUITE</span></div>
+        <nav className="sb-nav">
+          {menu.map(m => (
+            <div key={m.id} className={`nav-node ${tab === m.id ? 'active' : ''}`} onClick={() => { setTab(m.id); setSidebar(false); }}>
+              <span className="nav-label">{m.label}</span><div className="nav-bar" />
+            </div>
+          ))}
         </nav>
-        <div className="sidebar-status">Boardroom Stream Secure</div>
+        <div className="presets-section">
+          <div className="presets-header"><span>SAVED PRESETS</span><button className="add-preset-btn" onClick={savePreset}>+</button></div>
+          <div className="presets-list">
+            {presets.length === 0 ? <div className="preset-empty">No presets saved</div> : 
+              presets.map(p => (
+                <div key={p.id} className="preset-item" onClick={() => applyPreset(p)}>
+                  <span className="preset-name">{p.name}</span><button className="preset-del" onClick={(e) => deletePreset(p.id, e)}>✕</button>
+                </div>
+              ))}
+          </div>
+        </div>
+        <div className="sb-footer"><div className="secure-badge"><div className="pulse-dot" /> ENCRYPTED VETTED LINK</div></div>
       </aside>
 
-      <main className="content-viewport">
-        <header className="viewport-header">
-           <div className="vh-context">
-              <h2 className="vh-title">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('room', ' Room')} Overview</h2>
-              <p className="vh-location">Dana Point, California • Intelligence Sequence Active</p>
-           </div>
-           <div className="vh-actions">
-              <button className="btn-vdp secondary" onClick={() => alert("Report generated.")}>Generate Executive PDF</button>
-           </div>
+      <main className="main-content">
+        <header className="global-header glass">
+          <div className="header-left">
+            <button className="menu-btn" onClick={() => setSidebar(true)}>☰</button>
+            <div className="intel-command-hub">
+              <div className="hub-info"><span className="hub-cat-label">ACTIVE NODE</span><span className="hub-cat-val">{tab.toUpperCase()}</span></div>
+              <div className="hub-filters">
+                <div className="hub-field"><label>TIME</label><select value={filters.time} onChange={e => setFilters({...filters, time: e.target.value})}><option>Annual 2024</option><option>Q1 2025 Forecast</option></select></div>
+                <div className="hub-field"><label>SEGMENT</label><select value={filters.segment} onChange={e => setFilters({...filters, segment: e.target.value})}><option>Total Submarket</option><option>Luxury Tier</option></select></div>
+                <div className="hub-field"><label>{SECTION_FILTER_CONFIG[tab]?.label || 'METRIC'}</label><select value={filters.metric} onChange={e => setFilters({...filters, metric: e.target.value})}>
+                  {SECTION_FILTER_CONFIG[tab]?.options.map(o => <option key={o}>{o}</option>)}
+                </select></div>
+                <div className="toggle-box" onClick={() => setCompareMode(!compareMode)}>
+                    <label>YOY PARITY</label>
+                    <div className={`toggle-switch ${compareMode ? 'active' : ''}`}><div className="toggle-slider" /></div>
+                </div>
+              </div>
+              <button className="reset-hub-btn" onClick={resetFilters}>RESET FILTERS</button>
+            </div>
+          </div>
+          <div className="header-right"><button className={`gen-ai-btn ${generating ? 'loading' : ''}`} onClick={generateInfographic}>{generating ? 'SYNTHESIZING...' : 'AI INFOGRAPHIC'}</button></div>
         </header>
 
-        <section className="viewport-scroll">
-           {activeTab === 'impact' && (
-             <div className="view-pane">
-                <SectionHeader title="Economic Impact" imgUrl={DANA_POINT_IMAGERY.impact} subtitle="2025 Projected Regional Yield Analysis" />
-                <div className="metrics-layout">
-                   <MetricUnit label="Visitor Spend" val={vettedData.impact.spend} trend="+17.1%" source={vettedData.impact.source} date={vettedData.impact.date} onDrilldown={handleDrilldown} />
-                   <MetricUnit label="Annual Trips" val={vettedData.impact.trips} trend="Baseline" source={vettedData.impact.source} date={vettedData.impact.date} onDrilldown={handleDrilldown} />
-                   <MetricUnit label="Direct Employment" val={vettedData.impact.jobs} trend="Vetted" source={vettedData.impact.source} date={vettedData.impact.date} onDrilldown={handleDrilldown} />
-                   <MetricUnit label="Tax Contribution" val="$6.5M" trend="Direct" source="City of Dana Point" date="2024 Final" onDrilldown={handleDrilldown} />
+        <section className="viewport">
+          <div className="viewport-inner">
+            
+            {/* Economic Module */}
+            {tab === 'economic' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.economic})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Economic Performance</h2></div></header>
+                <div className="economic-canvas-grid">
+                    <ADRSparkline label="ADR PERFORMANCE" value={intelligence.economic.adr.value} source="STR Global" date={filters.time} />
+                    <OriginFlowChart data={intelligence.economic.originData} source="Datafy Intelligence" date={filters.time} />
                 </div>
-             </div>
-           )}
-           {activeTab === 'hotel' && (
-             <div className="view-pane">
-                <SectionHeader title="Hotel Performance" imgUrl={DANA_POINT_IMAGERY.hotel} subtitle="STR Global Intelligence Benchmarks" />
-                <div className="metrics-layout">
-                   <MetricUnit label="Occupancy Rate" val={vettedData.hotel.occupancy} trend="Market Average" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
-                   <MetricUnit label="ADR Projection" val={vettedData.hotel.adr} trend="Verified Performance" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
-                   <MetricUnit label="RevPAR Yield" val={vettedData.hotel.revpar} trend="Index 113" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
-                   <MetricUnit label="Performance Index" val={vettedData.hotel.index} trend="Market Superiority" source={vettedData.hotel.source} date={vettedData.hotel.date} onDrilldown={handleDrilldown} />
+                <div className="data-grid" style={{ marginTop: '25px' }}>
+                  <KPICard 
+                    label="ANNUAL YIELD" 
+                    value={intelligence.economic.yield.value} 
+                    prevValue={intelligence.economic.yield.prev} 
+                    trend={intelligence.economic.yield.trend} 
+                    showCompare={compareMode} 
+                    source={intelligence.economic.yield} 
+                    showTrend={true}
+                  />
+                  <KPICard 
+                    label="REVPAR INDEX" 
+                    value={intelligence.economic.revpar.value} 
+                    prevValue={intelligence.economic.revpar.prev} 
+                    trend={intelligence.economic.revpar.trend} 
+                    showCompare={compareMode} 
+                    source={intelligence.economic.revpar} 
+                    showTrend={true}
+                  />
                 </div>
-             </div>
-           )}
-           {activeTab === 'origin' && (
-             <div className="view-pane">
-               <SectionHeader title="Visitor Origin" imgUrl={DANA_POINT_IMAGERY.origin} subtitle="Dana Point Harbor Geofencing Markets" />
-               <div className="metrics-layout">
-                  <MetricUnit label="Day Rate" val={vettedData.origin.dayRate} trend="Dominant" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
-                  <MetricUnit label="Overnight" val={vettedData.origin.overnight} trend="Opportunity" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
-                  <MetricUnit label="Repeat Rate" val={vettedData.origin.repeats} trend="Loyalty" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
-                  <MetricUnit label="Primary Market" val={vettedData.origin.primary} trend="Regional Focus" source={vettedData.origin.source} date={vettedData.origin.date} onDrilldown={handleDrilldown} />
-               </div>
-             </div>
-           )}
-           {activeTab === 'newsroom' && <NewsroomView />}
-           {activeTab === 'studio' && <CreativeStudioView />}
-           {activeTab === 'analyst' && <StrategicAnalystView data={vettedData} />}
-           {activeTab === 'console' && <DataManagementConsole onUpdate={handleUpdate} />}
-        </section>
-      </main>
+                <DataHealthCheck moduleId="economic" />
+              </div>
+            )}
 
-      {drilldown && (
-        <div className="drilldown-modal-overlay" onClick={() => setDrilldown(null)}>
-          <div className="drilldown-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{drilldown.label} Deep Dive</h3>
-              <button onClick={() => setDrilldown(null)}>✕</button>
-            </div>
-            <div className="modal-content">
-              <div className="modal-hero-val">{drilldown.value}</div>
-              <p>Detailed historical breakdown for <strong>{drilldown.label}</strong> within the Dana Point region. This segment shows consistent performance metrics aligned with the 2025 strategic mandate. Source data verified via third-party audit sequence.</p>
-              <div className="mu-trend">Trend Analysis: Stable Growth Sequence</div>
-              <div className="modal-actions">
-                <button className="btn-vdp" onClick={() => alert("Full dataset exported.")}>Export Full Analysis</button>
+            {/* Resident Module */}
+            {tab === 'resident' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.resident})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Resident Benefit</h2></div></header>
+                <div className="resident-layout-grid">
+                  <div className="glass panel-hero">
+                    <div className="val-giant">{intelligence.resident.savings.value}</div>
+                    <div className="lbl-giant">ANNUAL TAX RELIEF OFFSET</div>
+                    <SourceTag {...intelligence.resident.savings} />
+                  </div>
+                  <div className="qol-box glass">
+                     <h3 className="sim-title">Quality of Life Ratio</h3>
+                     <div className="qol-visual">
+                        <div className="qol-center">
+                            <span className="qol-ratio-val">{intelligence.resident.qolRatio.visitor}%</span>
+                            <span className="qol-ratio-lbl">VISITOR LOAD</span>
+                        </div>
+                        <svg className="qol-ring-svg" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="45" fill="none" stroke="#E2E8F0" strokeWidth="8" />
+                          <circle cx="50" cy="50" r="45" fill="none" stroke={BRAND.primary} strokeWidth="8" strokeDasharray="282.7" strokeDashoffset={282.7 * (1 - intelligence.resident.qolRatio.visitor / 100)} transform="rotate(-90 50 50)" strokeLinecap="round" />
+                        </svg>
+                     </div>
+                     <p className="analysis-text">Tourism revenue maintains <strong>$1,240</strong> in essential city services per household without local fiscal burden.</p>
+                  </div>
+                </div>
+                <DataHealthCheck moduleId="resident" />
+              </div>
+            )}
+
+            {/* Competitive Share Module */}
+            {tab === 'market' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.market})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Competitive Share</h2></div></header>
+                <div className="market-comparative-grid">
+                   <div className="glass bench-container">
+                      <h3 className="bench-title">STR RevPAR Index</h3>
+                      {intelligence.market.benchmarks.map(b => (
+                        <div key={b.market} className="bench-row">
+                          <div className="bench-meta"><span>{b.market}</span><span>{b.index}.0 {compareMode && <span className="prev-val-chip">vs {b.prev}.0</span>}</span></div>
+                          <div className="bench-rail-composite"><div className="bench-bar current" style={{ width: `${(b.index/135)*100}%`, backgroundColor: b.color }} /></div>
+                        </div>
+                      ))}
+                   </div>
+                   <div className="glass bench-container">
+                      <h3 className="bench-title">Digital Velocity (GA4)</h3>
+                      {intelligence.market.benchmarks.map(b => (
+                        <div key={`${b.market}-digital`} className="bench-row">
+                          <div className="bench-meta"><span>{b.market}</span><span className="digital-stats">Traffic: {(b.traffic/1000).toFixed(1)}K | {b.conversion}% Conv</span></div>
+                          <div className="bench-rail-composite"><div className="bench-bar current" style={{ width: `${(b.traffic/350000)*100}%`, backgroundColor: b.color }} /></div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+                <DataHealthCheck moduleId="market" />
+              </div>
+            )}
+
+            {/* Simulation Module */}
+            {tab === 'simulation' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.simulation})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Impact Simulation</h2></div></header>
+                <div className="sim-container glass">
+                  <div className="sim-controls">
+                    <h3 className="sim-title">Event Scenario Parameters</h3>
+                    <div className="sim-field"><label>MONTH</label><select value={simParams.month} onChange={e => setSimParams({...simParams, month: e.target.value})}><option>February</option><option>March</option><option>October</option></select></div>
+                    <div className="sim-field"><label>DURATION (DAYS)</label><input type="range" min="1" max="7" value={simParams.duration} onChange={e => setSimParams({...simParams, duration: parseInt(e.target.value)})} /><span className="range-val">{simParams.duration} Days</span></div>
+                    <div className="sim-field"><label>EST. ATTENDANCE</label><input type="number" step="5000" value={simParams.attendance} onChange={e => setSimParams({...simParams, attendance: parseInt(e.target.value)})} /></div>
+                  </div>
+                  <div className="sim-output">
+                    <div className="sim-result-node">
+                      <span className="sim-res-lbl">EST. OCCUPANCY LIFT</span>
+                      <span className="sim-res-val">+{simResults.occLift}%</span>
+                      <span className="sim-res-sub">TARGET OCCUPANCY: {simResults.finalOcc}%</span>
+                    </div>
+                    <div className="sim-result-node">
+                      <span className="sim-res-lbl">PROJECTED DINING SPEND</span>
+                      <span className="sim-res-val">${simResults.diningImpact}M</span>
+                    </div>
+                  </div>
+                </div>
+                <DataHealthCheck moduleId="simulation" />
+              </div>
+            )}
+
+            {/* Strategic Advisor Module */}
+            {tab === 'advisor' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.advisor})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Strategic Advisor</h2></div></header>
+                <div className="glass briefing-panel">
+                  {loadingAdvisor ? (
+                    <div className="advisor-load">
+                      <div className="advisor-spinner" />
+                      Synthesizing vetted data nodes...
+                    </div>
+                  ) : (
+                    <div className="brief-content">{advisorBrief}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Mobility Module */}
+            {tab === 'mobility' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.mobility})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Mobility Intel</h2></div></header>
+                <div className="data-grid">
+                  <KPICard label="TOTAL VISITOR TRIPS" value={intelligence.mobility.trips.value} prevValue={intelligence.mobility.trips.prev} trend={intelligence.mobility.trips.trend} showCompare={compareMode} source={intelligence.mobility.trips} />
+                  <KPICard label="LA MARKET SHARE" value={intelligence.mobility.laMarketShare.value} trend="DOMINANT" source={intelligence.mobility.laMarketShare} />
+                </div>
+                <DataHealthCheck moduleId="mobility" />
+              </div>
+            )}
+
+            {/* Brand Module */}
+            {tab === 'brand' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.brand})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Brand Velocity</h2></div></header>
+                <div className="data-grid">
+                  <KPICard label="ANNUAL WEB VISITORS" value={intelligence.brand.visitors.value} prevValue={intelligence.brand.visitors.prev} trend={intelligence.brand.visitors.trend} showCompare={compareMode} source={intelligence.brand.visitors} />
+                  <KPICard label="CONVERSION RATE" value={intelligence.brand.conversion.value} prevValue={intelligence.brand.conversion.prev} trend="GAP IDENTIFIED" showCompare={compareMode} source={intelligence.brand.conversion} />
+                </div>
+                <DataHealthCheck moduleId="brand" />
+              </div>
+            )}
+
+            {/* Data Registry Module */}
+            {tab === 'registry' && (
+              <div className="module fade-in">
+                <header className="hero-box" style={{ backgroundImage: `url(${LANDMARKS.registry})` }}><div className="hero-overlay" /><div className="hero-content"><h2 className="hero-title">Data Registry</h2></div></header>
+                <div className="glass table-wrap">
+                  <div className="registry-controls">
+                    <input className="registry-search" placeholder="Search nodes or sources..." value={searchRegistry} onChange={e => setSearchRegistry(e.target.value)} />
+                    <select className="registry-type-filter" value={registryTypeFilter} onChange={e => setRegistryTypeFilter(e.target.value)}>
+                      <option value="ALL">All Node Types</option><option value="ECONOMIC">Economic</option><option value="MARKET">Market</option><option value="RESIDENT">Resident</option><option value="MOBILITY">Mobility</option><option value="BRAND">Brand</option>
+                    </select>
+                  </div>
+                  <table className="registry-table">
+                    <thead><tr><th>NODE</th><th>VALUE</th><th>TYPE</th><th>SOURCE</th></tr></thead>
+                    <tbody>
+                      {registryData.map((d, i) => (
+                        <tr key={i}><td className="node-name">{d.node}</td><td className="node-val">{d.value}</td><td><span className={`type-tag ${d.type}`}>{d.type}</span></td><td>{d.source}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </section>
+
+        {infographic && (
+          <div className="modal-overlay" onClick={() => setInfographic(null)}>
+            <div className="modal-content glass">
+              <div className="modal-head">
+                <h3>Synthesis Report: {tab.toUpperCase()}</h3>
+                <button onClick={() => setInfographic(null)}>✕</button>
+              </div>
+              <img src={infographic} alt="AI Summary" className="img-infographic" />
+              <div className="modal-footer">
+                <p>Synthesized via Gemini Vision Node. For internal executive presentation only.</p>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {chatOpen && (
-        <div className="concierge-panel">
-          <div className="cp-header">Intelligence Terminal</div>
-          <div className="cp-body">
-            {chatLog.map((c, i) => <div key={i} className={`chat-bubble-vdp ${c.role}`} dangerouslySetInnerHTML={{ __html: cleanAI(c.text) }} />)}
-          </div>
-          <div className="cp-input-area">
-            <input placeholder="Query intelligence sequence..." value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleChat()} />
-          </div>
-        </div>
-      )}
-      <div className={`concierge-toggle ${chatOpen ? 'active' : ''}`} onClick={() => setChatOpen(!chatOpen)}>{chatOpen ? '✕' : '💬'}</div>
+        )}
+      </main>
 
       <style>{`
-        :root { 
-          --teal: ${BRAND.primary}; --gold: ${BRAND.accent}; --navy: ${BRAND.navy}; 
-          --danger: ${BRAND.danger}; --dawn: ${BRAND.dawn}; --glass: ${BRAND.glass}; 
-          --font-display: 'Playfair Display', serif; --font-sans: 'Inter', sans-serif;
+        :root { --display: 'Playfair Display', serif; --ui: 'Inter', sans-serif; }
+        body, html { margin: 0; padding: 0; font-family: var(--ui); color: ${BRAND.navy}; background: ${BRAND.sand}; overflow-x: hidden; }
+        .app-shell { display: flex; height: 100vh; width: 100vw; }
+        .sidebar { width: 340px; background: ${BRAND.navy}; color: white; display: flex; flex-direction: column; transition: 0.4s; z-index: 1000; box-shadow: 10px 0 50px rgba(0,0,0,0.2); }
+        .sb-header { padding: 40px; }
+        .brand-logo { font-family: var(--display); font-size: 2.1rem; margin: 0; color: ${BRAND.primary}; }
+        .brand-intel { font-size: 0.65rem; opacity: 0.5; letter-spacing: 0.3em; display: block; margin-top: 15px; }
+        .sb-nav { padding: 15px; flex: 1; overflow-y: auto; }
+        .nav-node { padding: 14px 25px; cursor: pointer; opacity: 0.4; transition: 0.3s; position: relative; border-radius: 14px; margin-bottom: 5px; }
+        .nav-node.active { opacity: 1; background: rgba(255,255,255,0.08); }
+        .nav-bar { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 0; background: ${BRAND.brightGold}; transition: 0.4s; }
+        .nav-node.active .nav-bar { height: 60%; }
+        .presets-section { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .presets-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.6rem; font-weight: 900; color: rgba(255,255,255,0.4); margin-bottom: 10px; }
+        .add-preset-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; }
+        .preset-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-bottom: 5px; }
+        .preset-item:hover { background: rgba(255,255,255,0.05); }
+        .preset-del { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; }
+        .sb-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .secure-badge { display: flex; align-items: center; gap: 8px; font-size: 0.55rem; color: rgba(255,255,255,0.4); font-weight: 900; }
+        .pulse-dot { width: 6px; height: 6px; background: ${BRAND.success}; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: ${BRAND.sand}; }
+        .global-header { height: 100px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; position: sticky; top: 0; z-index: 500; }
+        .intel-command-hub { display: flex; align-items: center; padding: 10px 20px; border-radius: 20px; border: 1.5px solid #E2E8F0; gap: 30px; }
+        .hub-info { border-right: 1.5px solid #E2E8F0; padding-right: 20px; }
+        .hub-cat-label { font-size: 0.5rem; font-weight: 900; color: #94A3B8; }
+        .hub-cat-val { font-size: 0.9rem; font-weight: 900; color: ${BRAND.primary}; }
+        .hub-filters { display: flex; gap: 20px; align-items: center; }
+        .hub-field label { font-size: 0.5rem; color: #94A3B8; display: block; font-weight: 900; }
+        .hub-field select { border: none; font-weight: 700; outline: none; background: transparent; cursor: pointer; font-size: 0.8rem; }
+        .reset-hub-btn { background: ${BRAND.sand}; color: ${BRAND.primary}; border: 1.5px solid #E2E8F0; padding: 8px 16px; border-radius: 10px; font-size: 0.65rem; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .reset-hub-btn:hover { background: #F1F5F9; border-color: ${BRAND.primary}; }
+        
+        .viewport-inner { max-width: 1400px; margin: 0 auto; padding: 40px; }
+        .hero-box { height: 280px; border-radius: 35px; overflow: hidden; position: relative; display: flex; align-items: flex-end; padding: 50px; color: white; background-size: cover; background-position: center; margin-bottom: 40px; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, ${BRAND.navy} 15%, transparent 100%); opacity: 0.8; }
+        .hero-content { position: relative; z-index: 10; }
+        .hero-title { font-family: var(--display); font-size: 3.5rem; margin: 0; }
+        .glass { background: ${BRAND.glass}; backdrop-filter: blur(40px); border: 1.5px solid rgba(255,255,255,0.8); border-radius: 30px; box-shadow: ${BRAND.shadow}; }
+        
+        .economic-canvas-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 25px; }
+        .origin-flow-container { padding: 30px; display: flex; flex-direction: column; }
+        .origin-canvas { width: 100%; height: 220px; }
+        .spark-node { padding: 30px; display: flex; flex-direction: column; gap: 20px; }
+        .spark-canvas { width: 100%; height: 80px; }
+
+        .data-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        .kpi-node { padding: 40px; border-top: 6px solid ${BRAND.primary}; position: relative; }
+        .kpi-hero-wrap { display: flex; align-items: flex-end; justify-content: space-between; }
+        .mini-trend { margin-bottom: 12px; opacity: 0.7; }
+        .kpi-val-hero { font-family: var(--display); font-size: 2.8rem; color: ${BRAND.navy}; margin: 10px 0; display: block; }
+        .kpi-lbl { font-size: 0.65rem; color: #94A3B8; letter-spacing: 0.15em; font-weight: 900; }
+        .kpi-trend-pill { position: absolute; top: 40px; right: 40px; background: ${BRAND.success}; color: white; font-size: 0.55rem; font-weight: 900; padding: 4px 10px; border-radius: 20px; }
+        .kpi-compare-cluster { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .kpi-val-prev { font-size: 0.75rem; color: #94A3B8; font-weight: 700; }
+        .kpi-delta { font-size: 0.75rem; font-weight: 900; padding: 2px 8px; border-radius: 4px; }
+        .kpi-delta.pos { color: ${BRAND.success}; background: rgba(45, 206, 137, 0.1); }
+        .kpi-delta.neg { color: ${BRAND.danger}; background: rgba(255, 77, 77, 0.1); }
+        .kpi-source { margin-top: 20px; font-size: 0.55rem; color: #94A3B8; font-weight: 700; border-top: 1px solid #F1F5F9; padding-top: 10px; }
+        
+        .health-check { margin-top: 40px; padding: 30px; }
+        .health-head { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1.5px solid #F1F5F9; padding-bottom: 10px; }
+        .health-title { font-size: 0.7rem; font-weight: 900; color: #94A3B8; letter-spacing: 0.1em; }
+        .health-status { font-size: 0.6rem; font-weight: 900; color: ${BRAND.success}; }
+        .health-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .health-node label { font-size: 0.55rem; font-weight: 900; color: #94A3B8; display: block; margin-bottom: 8px; }
+        .health-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .health-tag { font-size: 0.6rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; }
+        .health-tag.source { background: rgba(0, 107, 118, 0.1); color: ${BRAND.primary}; }
+        .health-tag.missing { background: rgba(255, 77, 77, 0.1); color: ${BRAND.danger}; }
+
+        .resident-layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .val-giant { font-family: var(--display); font-size: 6rem; color: ${BRAND.primary}; }
+        .lbl-giant { font-size: 1rem; font-weight: 900; color: ${BRAND.accent}; letter-spacing: 0.2em; margin-bottom: 30px; }
+        .panel-hero { padding: 50px; text-align: center; }
+        .qol-box { padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .qol-visual { width: 180px; height: 180px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .qol-ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .qol-center { text-align: center; z-index: 5; }
+        .qol-ratio-val { font-family: var(--display); font-size: 2.5rem; color: ${BRAND.primary}; display: block; }
+        .qol-ratio-lbl { font-size: 0.6rem; font-weight: 900; color: #94A3B8; }
+        .analysis-text { color: #64748B; line-height: 1.6; margin-top: 30px; text-align: center; }
+
+        .market-comparative-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .bench-container { padding: 40px; }
+        .bench-title { font-family: var(--display); font-size: 1.5rem; margin-bottom: 30px; color: ${BRAND.primary}; }
+        .bench-row { margin-bottom: 25px; }
+        .bench-meta { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 900; margin-bottom: 8px; }
+        .bench-rail-composite { height: 12px; background: #E2E8F0; border-radius: 6px; overflow: hidden; }
+        .bench-bar { height: 100%; transition: 1s cubic-bezier(0.19, 1, 0.22, 1); }
+        .digital-stats { color: #94A3B8; font-size: 0.7rem; }
+
+        .sim-container { padding: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
+        .sim-title { font-family: var(--display); font-size: 1.5rem; margin-bottom: 30px; color: ${BRAND.primary}; }
+        .sim-field { margin-bottom: 20px; }
+        .sim-field label { font-size: 0.6rem; font-weight: 900; color: #94A3B8; display: block; margin-bottom: 8px; }
+        .sim-field select, .sim-field input { width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid #E2E8F0; font-weight: 700; background: white; }
+        .range-val { font-size: 0.8rem; font-weight: 700; color: ${BRAND.primary}; display: block; margin-top: 5px; }
+        .sim-output { display: flex; flex-direction: column; gap: 20px; justify-content: center; }
+        .sim-result-node { padding: 30px; background: #F8FAFC; border-left: 8px solid ${BRAND.primary}; border-radius: 15px; }
+        .sim-res-lbl { font-size: 0.6rem; font-weight: 900; color: #94A3B8; }
+        .sim-res-val { display: block; font-family: var(--display); font-size: 2.5rem; color: ${BRAND.primary}; margin: 10px 0; }
+        .sim-res-sub { font-size: 0.75rem; color: #64748B; font-weight: 800; }
+
+        .briefing-panel { padding: 50px; min-height: 400px; display: flex; flex-direction: column; }
+        .advisor-load { color: #94A3B8; font-style: italic; display: flex; align-items: center; gap: 15px; }
+        .advisor-spinner { width: 24px; height: 24px; border: 3px solid #E2E8F0; border-top-color: ${BRAND.primary}; border-radius: 50%; animation: spin 1s infinite linear; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .brief-content { line-height: 1.8; font-size: 1.1rem; color: #334155; white-space: pre-wrap; }
+
+        .table-wrap { overflow: hidden; }
+        .registry-controls { padding: 30px 40px; display: flex; gap: 15px; }
+        .registry-search { flex: 1; padding: 12px 20px; border-radius: 12px; border: 1.5px solid #E2E8F0; font-weight: 600; }
+        .registry-type-filter { padding: 12px; border-radius: 12px; border: 1.5px solid #E2E8F0; font-weight: 700; background: white; cursor: pointer; }
+        .registry-table { width: 100%; border-collapse: collapse; }
+        .registry-table th { text-align: left; padding: 20px; border-bottom: 2px solid #F1F5F9; font-size: 0.65rem; color: #94A3B8; text-transform: uppercase; }
+        .registry-table td { padding: 20px; border-bottom: 1px solid #F1F5F9; font-weight: 600; font-size: 0.9rem; }
+        .node-name { color: ${BRAND.navy}; font-weight: 900; }
+        .node-val { color: ${BRAND.primary}; }
+        .type-tag { font-size: 0.6rem; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
+        .type-tag.ECONOMIC { background: #E0F2F1; color: #00796B; }
+        .type-tag.MARKET { background: #F3E5F5; color: #7B1FA2; }
+        .type-tag.MOBILITY { background: #E3F2FD; color: #1976D2; }
+        .type-tag.RESIDENT { background: #FFF3E0; color: #E65100; }
+        .type-tag.BRAND { background: #F1F8E9; color: #33691E; }
+
+        .toggle-box { display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+        .toggle-box label { font-size: 0.5rem; font-weight: 900; color: #A67C00; text-transform: uppercase; }
+        .toggle-switch { width: 40px; height: 20px; background: #E2E8F0; border-radius: 20px; position: relative; transition: 0.3s; }
+        .toggle-switch.active { background: ${BRAND.primary}; }
+        .toggle-slider { width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s; }
+        .toggle-switch.active .toggle-slider { left: 23px; }
+
+        .gen-ai-btn { background: ${BRAND.navy}; color: ${BRAND.brightGold}; border: 1.5px solid ${BRAND.brightGold}; padding: 12px 24px; border-radius: 12px; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .gen-ai-btn:hover { background: ${BRAND.primary}; }
+        .gen-ai-btn.loading { opacity: 0.7; cursor: wait; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { max-width: 90%; max-height: 90%; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .modal-head { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 15px; }
+        .modal-head h3 { font-family: var(--display); color: ${BRAND.primary}; margin: 0; }
+        .modal-head button { background: none; border: none; font-size: 2rem; cursor: pointer; color: ${BRAND.navy}; }
+        .img-infographic { max-width: 100%; border-radius: 15px; box-shadow: 0 25px 60px rgba(0,0,0,0.4); }
+        .modal-footer { margin-top: 20px; font-size: 0.75rem; color: #94A3B8; }
+
+        .fade-in { animation: enter 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+        @keyframes enter { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .menu-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; display: none; margin-right: 15px; }
+
+        @media (max-width: 1100px) {
+          .sidebar { width: 0; position: fixed; left: -340px; height: 100%; }
+          .app-shell.sb-open .sidebar { width: 340px; left: 0; }
+          .menu-btn { display: block; }
+          .data-grid, .resident-layout-grid, .market-comparative-grid, .sim-container, .economic-canvas-grid { grid-template-columns: 1fr; }
+          .intel-command-hub { flex-wrap: wrap; gap: 15px; padding: 15px; }
+          .global-header { height: auto; padding: 20px; }
         }
-        
-        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-        body, html { margin: 0; padding: 0; font-family: var(--font-sans); height: 100vh; overflow: hidden; background: var(--dawn); color: var(--navy); }
-
-        .app-container { display: flex; height: 100vh; position: relative; }
-        .background-parallax { position: fixed; inset: 0; background-size: cover; background-position: center; opacity: 0.12; z-index: -1; }
-
-        /* Ticker - Fixed for perfect looping within container */
-        .intelligence-ticker { height: 48px; background: var(--navy); color: white; display: flex; align-items: center; overflow: hidden; position: fixed; top: 0; left: 340px; right: 0; z-index: 1000; cursor: pointer; border-bottom: 2px solid var(--gold); }
-        .ticker-label { background: var(--danger); font-weight: 900; font-size: 0.65rem; height: 100%; display: flex; align-items: center; padding: 0 20px; letter-spacing: 0.1em; z-index: 2; }
-        .ticker-wrapper { flex: 1; overflow: hidden; position: relative; height: 100%; }
-        .ticker-content { display: flex; white-space: nowrap; align-items: center; height: 100%; position: absolute; left: 0; animation: ticker-animation 60s linear infinite; }
-        .ticker-msg { padding-right: 150px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
-        @keyframes ticker-animation { 
-          0% { transform: translateX(0); } 
-          100% { transform: translateX(-50%); } 
-        }
-
-        /* Sidebar */
-        .sidebar-container { width: 340px; background: var(--navy); color: white; display: flex; flex-direction: column; z-index: 1200; border-right: 1px solid rgba(255,255,255,0.08); }
-        .sidebar-brand { padding: 40px; }
-        .brand-logo { font-family: var(--font-display); font-size: 2.2rem; margin: 0; color: var(--teal); letter-spacing: -0.01em; }
-        .brand-suite { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.25em; opacity: 0.6; display: block; margin-top: 12px; text-transform: uppercase; }
-        .sidebar-navigation { flex: 1; padding: 10px 20px; overflow-y: auto; }
-        .sb-item { display: flex; align-items: center; gap: 20px; padding: 14px 25px; border-radius: 20px; margin-bottom: 4px; cursor: pointer; transition: 0.3s; opacity: 0.7; }
-        .sb-item:hover { background: rgba(255,255,255,0.06); opacity: 1; transform: translateX(6px); }
-        .sb-item.active { background: rgba(0, 107, 118, 0.3); opacity: 1; border-left: 6px solid var(--gold); }
-        .ni-icon-wrap { color: var(--teal); display: flex; align-items: center; }
-        .ni-label { font-weight: 800; font-size: 1.05rem; display: block; }
-        .ni-desc { font-size: 0.65rem; text-transform: uppercase; opacity: 0.55; font-weight: 900; letter-spacing: 0.05em; }
-        .sidebar-status { padding: 20px; text-align: center; font-size: 0.65rem; font-weight: 900; letter-spacing: 0.2em; opacity: 0.3; text-transform: uppercase; }
-
-        /* Viewport */
-        .content-viewport { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-top: 48px; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(10px); }
-        .viewport-header { height: 140px; display: flex; align-items: center; justify-content: space-between; padding: 0 65px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .vh-title { font-family: var(--font-display); font-size: 2.6rem; margin: 0; letter-spacing: -0.02em; color: var(--navy); }
-        .vh-location { margin: 6px 0 0; font-weight: 900; color: var(--teal); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; }
-
-        .viewport-scroll { flex: 1; overflow-y: auto; padding: 40px 65px 120px; }
-        .view-pane { animation: slide-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slide-up { from { opacity: 0; transform: translateY(35px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Newsroom Design - CNBC/CNN Style */
-        .newsroom-pane { background: white; border-radius: 40px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: ${BRAND.shadow}; }
-        .newsroom-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0; border-top: 1px solid #E2E8F0; }
-        .news-hero { padding: 60px; border-right: 1px solid #E2E8F0; }
-        .breaking-badge { background: var(--danger); color: white; display: inline-block; padding: 5px 15px; font-weight: 900; font-size: 0.7rem; letter-spacing: 0.15em; border-radius: 4px; margin-bottom: 25px; animation: blink 1.5s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .hero-title { font-family: var(--font-display); font-size: 3.2rem; line-height: 1.1; margin: 0 0 25px; color: var(--navy); }
-        .hero-desc { font-size: 1.3rem; line-height: 1.6; color: #4A5568; margin-bottom: 40px; font-weight: 500; }
-        .hero-meta { font-weight: 800; font-size: 0.8rem; color: #A0AEC0; }
-        .hero-meta a { color: var(--teal); text-decoration: none; border-bottom: 2px solid var(--teal); margin-left: 15px; }
-
-        .news-sidebar { background: #F8FAFC; padding: 40px; }
-        .sidebar-label { font-weight: 900; font-size: 0.75rem; letter-spacing: 0.2em; color: #A0AEC0; border-bottom: 2px solid #E2E8F0; padding-bottom: 15px; margin-bottom: 30px; text-transform: uppercase; }
-        .sidebar-news-item { margin-bottom: 35px; border-bottom: 1px solid #E2E8F0; padding-bottom: 20px; }
-        .item-cat { color: var(--teal); font-weight: 900; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-        .item-title { font-family: var(--font-display); font-size: 1.25rem; margin: 0 0 12px; line-height: 1.3; color: var(--navy); }
-        .item-meta { font-size: 0.7rem; color: #A0AEC0; font-weight: 700; }
-        .item-meta a { color: var(--gold); text-decoration: none; margin-left: 10px; }
-
-        /* Section Header */
-        .section-header-card { height: 380px; position: relative; overflow: hidden; border-bottom: 5px solid var(--gold); border-radius: 40px 40px 0 0; }
-        .sh-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-        .sh-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,28,54,0.95), transparent); display: flex; align-items: flex-end; padding: 60px; }
-        .sh-title { color: white; font-family: var(--font-display); font-size: 3.5rem; margin: 0; }
-        .sh-subtitle { color: var(--gold); font-size: 1.1rem; font-weight: 800; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
-
-        /* Metrics */
-        .metrics-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; margin-top: 40px; }
-        .mu-card { background: white; padding: 40px; border-radius: 30px; border: 1px solid #E2E8F0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        .mu-label { font-size: 0.75rem; font-weight: 900; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 15px; }
-        .mu-val { font-size: 3rem; font-family: var(--font-display); color: var(--navy); font-weight: 800; margin-bottom: 10px; flex: 1; }
-        .mu-trend { color: var(--teal); font-weight: 900; font-size: 0.9rem; margin-bottom: 15px; }
-        .mu-footer { border-top: 1px solid #F1F5F9; padding-top: 15px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .mu-source-info { font-size: 0.65rem; color: #A0AEC0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; max-width: 60%; }
-        .drilldown-btn { background: transparent; border: 1.5px solid var(--teal); color: var(--teal); padding: 5px 12px; border-radius: 8px; font-size: 0.65rem; font-weight: 900; letter-spacing: 0.05em; transition: 0.3s; }
-        .drilldown-btn:hover { background: var(--teal); color: white; }
-
-        /* Buttons & Controls */
-        .btn-vdp { background: var(--teal); color: white; border: none; padding: 18px 40px; border-radius: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s; }
-        .btn-vdp.secondary { background: white; color: var(--navy); border: 2px solid #E2E8F0; }
-        .btn-vdp:hover { filter: brightness(1.1); transform: translateY(-2px); }
-
-        /* Drilldown Modal */
-        .drilldown-modal-overlay { position: fixed; inset: 0; background: rgba(10, 28, 54, 0.8); backdrop-filter: blur(5px); z-index: 5000; display: flex; align-items: center; justify-content: center; animation: fade-in 0.3s ease; }
-        .drilldown-modal { background: white; width: 600px; border-radius: 40px; overflow: hidden; box-shadow: 0 50px 100px rgba(0,0,0,0.5); animation: zoom-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .modal-header { padding: 30px 40px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; background: var(--dawn); }
-        .modal-header h3 { margin: 0; font-family: var(--font-display); font-size: 1.8rem; }
-        .modal-header button { background: none; border: none; font-size: 1.5rem; color: #A0AEC0; cursor: pointer; }
-        .modal-content { padding: 40px; }
-        .modal-hero-val { font-family: var(--font-display); font-size: 5rem; font-weight: 900; color: var(--teal); margin-bottom: 20px; text-align: center; }
-        .modal-content p { font-size: 1.1rem; line-height: 1.7; color: #4A5568; margin-bottom: 30px; }
-        .modal-actions { display: flex; justify-content: center; padding-top: 20px; }
-        
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes zoom-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-        /* Concierge */
-        .concierge-toggle { position: fixed; bottom: 40px; right: 40px; width: 75px; height: 75px; background: var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; cursor: pointer; z-index: 2000; box-shadow: 0 15px 45px rgba(0,0,0,0.2); transition: 0.3s; }
-        .concierge-panel { position: fixed; bottom: 130px; right: 40px; width: 420px; height: 600px; background: white; border-radius: 40px; z-index: 2000; box-shadow: 0 30px 100px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; }
-        .cp-header { background: var(--navy); color: white; padding: 25px; text-align: center; font-weight: 900; text-transform: uppercase; }
-        .cp-body { flex: 1; padding: 30px; overflow-y: auto; background: #F8FAFC; display: flex; flex-direction: column; gap: 15px; }
-        .chat-bubble-vdp { padding: 15px 22px; border-radius: 20px; font-size: 1rem; max-width: 85%; }
-        .chat-bubble-vdp.user { background: var(--teal); color: white; align-self: flex-end; }
-        .chat-bubble-vdp.model { background: white; border: 1px solid #E2E8F0; align-self: flex-start; color: var(--navy); }
-        .cp-input-area { padding: 25px; border-top: 1px solid #E2E8F0; }
-        .cp-input-area input { width: 100%; padding: 18px 25px; border-radius: 15px; border: 2px solid #F1F5F9; outline: none; font-weight: 700; }
-        
-        .mt-20 { margin-top: 20px; }
-        .mt-40 { margin-top: 40px; }
       `}</style>
     </div>
   );
 };
 
-// --- View Helpers ---
-
-const CreativeStudioView = () => {
-  const [prompt, setPrompt] = useState('');
-  const [asset, setAsset] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleGen = async () => {
-    if (!prompt) return;
-    setLoading(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const res = await ai.models.generateContent({
-        model: 'gemini-3-pro-image-preview',
-        contents: { parts: [{ text: `Professional high-definition asset of Dana Point, CA: ${prompt}` }] },
-        config: { imageConfig: { aspectRatio: '16:9', imageSize: '1K' } }
-      });
-      for (const part of res.candidates[0].content.parts) {
-        if (part.inlineData) { setAsset(`data:image/png;base64,${part.inlineData.data}`); break; }
-      }
-    } catch { alert("Generation timeout."); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div className="view-pane">
-      <SectionHeader title="Creative Studio" imgUrl={DANA_POINT_IMAGERY.studio} subtitle="Cinematic Asset Orchestration" />
-      <div className="pane-content" style={{ padding: '40px' }}>
-        <textarea 
-          placeholder="Describe your cinematic Dana Point vision... (e.g., 'Golden hour surf at Salt Creek Beach')" 
-          value={prompt} onChange={e => setPrompt(e.target.value)}
-          style={{ width: '100%', height: '140px', padding: '25px', borderRadius: '25px', border: '2px solid #E2E8F0', fontSize: '1.2rem', outline: 'none', background: '#FAFBFC', marginBottom: '20px' }}
-        />
-        <button className="btn-vdp" onClick={handleGen} disabled={loading}>{loading ? 'Synthesizing Asset...' : 'Execute Synthesis'}</button>
-        {asset && <div className="mt-40"><img src={asset} alt="Generated" style={{ width: '100%', borderRadius: '25px', boxShadow: BRAND.shadow }} /></div>}
-      </div>
-    </div>
-  );
-};
-
-const StrategicAnalystView = ({ data }: { data: any }) => {
-  const [query, setQuery] = useState('');
-  const [res, setRes] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleAnalyst = async () => {
-    if (!query) return;
-    setLoading(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: `Analyst Query: ${query}. Data: ${JSON.stringify(data)}. Provide professional Title Case response. HTML formatted. Focus on Dana Point, CA locations.`,
-        config: { thinkingConfig: { thinkingBudget: 32768 } }
-      });
-      setRes(response.text || 'Analysis complete.');
-    } catch { setRes('Buffer limit reached.'); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div className="view-pane">
-       <SectionHeader title="Strategic Analyst" imgUrl={DANA_POINT_IMAGERY.analyst} subtitle="High-Reasoning Decision Support" />
-       <div style={{ padding: '40px' }}>
-          <input placeholder="Pose a strategic regional inquiry..." value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAnalyst()} style={{ width: '100%', padding: '25px', borderRadius: '25px', border: '2px solid #E2E8F0', fontSize: '1.2rem', outline: 'none' }} />
-          <button className="btn-vdp mt-20" onClick={handleAnalyst} disabled={loading}>{loading ? 'Reasoning...' : 'Execute Deep Analysis'}</button>
-          {res && <div className="mt-40 mu-card" style={{ fontSize: '1.2rem', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: cleanAI(res) }} />}
-       </div>
-    </div>
-  );
-};
-
-const DataManagementConsole = ({ onUpdate }: { onUpdate: (data: any) => void }) => (
-  <div className="view-pane">
-    <SectionHeader title="Data Console" imgUrl={DANA_POINT_IMAGERY.console} subtitle="Strategic Brain Synchronizer" />
-    <div style={{ padding: '80px', textAlign: 'center' }}>
-       <div style={{ padding: '80px', border: '3px dashed var(--teal)', borderRadius: '40px', background: '#F8FAFC' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem' }}>Synchronize Regional Datasets</h3>
-          <p style={{ maxWidth: '600px', margin: '20px auto', fontSize: '1.1rem', opacity: 0.7 }}>Drag and drop secure CSV/XLS data streams to update the VDP Strategic Brain and refine regional benchmarks for Dana Point, CA.</p>
-          <button className="btn-vdp" onClick={() => alert("Ready for upload.")}>Select Intelligence Source</button>
-       </div>
-    </div>
-  </div>
-);
-
-// --- Execution ---
 const root = createRoot(document.getElementById('root')!);
 root.render(<Dashboard />);
