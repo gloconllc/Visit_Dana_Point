@@ -13,7 +13,15 @@
 - After successful login, wait for the main page to load.
 - In the **top navigation bar**, find and click the item labeled **"Properties"**.
 
+## Step 4: Open the Save Dropdown
+- On the Properties page (All Properties view), locate the toolbar above the property list containing: "Filters", "Sort", "Save", "Reports", "More".
+- Click the button labeled **"Save"**.
+
+## Step 5: Select the Saved Search "VDP Select"
+- When the Save dropdown menu opens, locate the saved searches section.
+- Click the saved search item labeled exactly **"VDP Select"**.
+
 ---
 
-_Steps 4+ to be determined. Navigation path so far:_
-`Login → Properties → ???`
+_Steps 6+ to be determined. Navigation path so far:_
+`Login → Properties → Save → VDP Select → ???`
