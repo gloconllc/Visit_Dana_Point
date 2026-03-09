@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Downloaded STR/CoStar exports (keep folder, ignore files)
+downloads/*.csv
+downloads/*.xlsx
+downloads/*.xls
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
